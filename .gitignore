@@ -1,2 +1,10 @@
 .vscode/
 env/
+*__pycache__
+*.pyc
+*.c
+*.so
+*.o
+*.zip
+.vscode/
+*pyc
