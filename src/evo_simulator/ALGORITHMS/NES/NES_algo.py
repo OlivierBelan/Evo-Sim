@@ -6,7 +6,7 @@ from typing import Tuple
 # adopted from:
 #https://github.com/hardmaru/estool/blob/master/es.py
 
-class PEPG:
+class NES_algo:
   def __init__(self,
                # 1. Major params
                population_size:int,               # population size

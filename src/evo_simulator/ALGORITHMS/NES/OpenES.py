@@ -3,93 +3,88 @@ from evo_simulator.GENERAL.Genome import Genome_NN
 import evo_simulator.TOOLS as TOOLS
 from evo_simulator.GENERAL.Index_Manager import get_new_genome_id
 from evo_simulator.GENERAL.Population import Population
-from ALGORITHMS.NES.NES_algo import NES_algo
+from ALGORITHMS.NES.OpenES_algo import OpenES_algo
 from evo_simulator.GENERAL.NN import NN
 from typing import Dict, Any, List
 import numpy as np
 
 
-class NES(Algorithm): # Natural Evolution Strategies
-    def __init__(self, config_path_file:str, name:str = "NES") -> None:
+class OpenES(Algorithm): # Natural Evolution Strategies
+    def __init__(self, config_path_file:str, name:str = "OpenES") -> None:
         Algorithm.__init__(self, config_path_file, name)
         # Initialize configs
-        self.config_es:Dict[str, Dict[str, Any]] = TOOLS.config_function(config_path_file, ["NES", "Genome_NN"])
-        self.verbose:bool = True if self.config_es["NES"]["verbose"] == "True" else False
+        self.config_es:Dict[str, Dict[str, Any]] = TOOLS.config_function(config_path_file, ["Runner_Info", "OpenES", "Genome_NN"])
+        self.verbose:bool = True if self.config_es["OpenES"]["verbose"] == "True" else False
         self.algorithme_name:str = name
-
-        self.pop_size:int = int(self.config_es["NES"]["pop_size"])
+        
         self.is_first_generation:bool = True
+        self.pop_size:int = int(self.config_es["OpenES"]["pop_size"])
         self.genome_core:Genome_NN = Genome_NN(-1, self.config_es["Genome_NN"], self.attributes_manager)
         self.network_type:str = self.config_es["Genome_NN"]["network_type"]
         self.is_neuron_param:bool = True if "bias" in self.attributes_manager.mu_parameters else False
+
+        if self.network_type == "SNN":
+            self.decay_method:str = self.config_es["Runner_Info"]["decay_method"]
         
         # Initialize es_algorithms
-        self.init_NES_algorithms(config_path_file)
+        self.init_algorithms()
 
-    def init_NES_algorithms(self, config_path_file:str):
-        config_nes:Dict[str, Any] = TOOLS.config_function(config_path_file, ["NES"])["NES"]
+
+    def init_algorithms(self) -> None:
+        config_OpenES:Dict[str, Any] = self.config_es["OpenES"]
 
         self.neuron_parameters_size:int = self.genome_core.nn.nb_neurons
 
         self.synapse_parameters_size:int = self.genome_core.nn.synapses_actives_indexes[0].size
-        elite_ratio:float = float(config_nes["elite_ratio"])
 
         # 1. Mu params
-        mu_init:float = float(config_nes["mu_init"]) 
+        mu_init:float = float(config_OpenES["mu_init"])
 
         # 2. Sigma params
-        sigma_init:float = float(config_nes["sigma_init"])
-        sigma_alpha:float = float(config_nes["sigma_alpha"])
-        sigma_decay:float = float(config_nes["sigma_decay"])
-        sigma_limit:float = float(config_nes["sigma_limit"])
-        sigma_max_change:float = float(config_nes["sigma_max_change"])
+        sigma_init:float = float(config_OpenES["sigma_init"])
+        sigma_decay:float = float(config_OpenES["sigma_decay"])
+        sigma_limit:float = float(config_OpenES["sigma_limit"])
 
         # 3. Learning rate params
-        learning_rate:float = float(config_nes["learning_rate"])
-        learning_rate_decay:float = float(config_nes["learning_rate_decay"])
-        learning_rate_limit:float = float(config_nes["learning_rate_limit"])
+        learning_rate:float = float(config_OpenES["learning_rate"])
+        learning_rate_decay:float = float(config_OpenES["learning_rate_decay"])
+        learning_rate_limit:float = float(config_OpenES["learning_rate_limit"])
 
         # 4. Other params
-        average_baseline:bool = True if config_nes["average_baseline"] == "True" else False
-        parameters_decay:float = float(config_nes["parameters_decay"])
-        rank_fitness:bool = True if config_nes["rank_fitness"] == "True" else False
-        forget_best:bool = True if config_nes["forget_best"] == "True" else False
-        optimizer_name:str = config_nes["optimizer_name"]
-
+        antithetic:bool = True if config_OpenES["antithetic"] == "True" else False
+        parameters_decay:float = float(config_OpenES["parameters_decay"])
+        rank_fitness:bool = True if config_OpenES["rank_fitness"] == "True" else False
+        forget_best:bool = True if config_OpenES["forget_best"] == "True" else False
+        optimizer_name:str = config_OpenES["optimizer_name"]
 
         if self.network_type == "ANN" and self.is_neuron_param == True:
             param_size:int = self.neuron_parameters_size + self.synapse_parameters_size
         elif self.network_type == "SNN" or (self.network_type == "ANN" and self.is_neuron_param == False):
             param_size:int = self.synapse_parameters_size
 
-        self.nes_algo:NES_algo = NES_algo(   
-                                    population_size=self.pop_size, 
-                                    num_params=param_size,
-                                    elite_ratio=elite_ratio,
-                                    # 1 - Mu params
-                                    mu_init=mu_init,
+        self.openES_algo:OpenES_algo = OpenES_algo(   
+                                        population_size=self.pop_size, 
+                                        num_params=param_size,
+                                        # 1 - Mu params
+                                        mu_init=mu_init,
 
-                                    # 2 - Sigma params
-                                    sigma_init=sigma_init,
+                                        # 2 - Sigma params
+                                        sigma_init=sigma_init,
+                                        sigma_decay=sigma_decay,
+                                        sigma_limit=sigma_limit,
 
-                                    sigma_alpha=sigma_alpha,
-                                    sigma_decay=sigma_decay,
-                                    sigma_limit=sigma_limit,
-                                    sigma_max_change=sigma_max_change,
+                                        # 3 - Learning rate params
+                                        learning_rate=learning_rate,
+                                        learning_rate_decay=learning_rate_decay,
+                                        learning_rate_limit=learning_rate_limit,
 
-                                    # 3 - Learning rate params
-                                    learning_rate=learning_rate,
-                                    learning_rate_decay=learning_rate_decay,
-                                    learning_rate_limit=learning_rate_limit,
-
-                                    # 4 - Other params
-                                    average_baseline=average_baseline,
-                                    parameters_decay=parameters_decay,
-                                    rank_fitness=rank_fitness,
-                                    forget_best=forget_best,
-                                    optimizer_name=optimizer_name
+                                        # 4 - Other params
+                                        antithetic=antithetic,
+                                        parameters_decay=parameters_decay,
+                                        rank_fitness=rank_fitness,
+                                        forget_best=forget_best,
+                                        optimizer_name=optimizer_name
                                     )
-
 
     def run(self, global_population:Population) -> Population:
 
@@ -101,7 +96,7 @@ class NES(Algorithm): # Natural Evolution Strategies
             self.__update_population_parameter(self.population_manager)
             return self.population_manager
         
-        # 1 - Update NES
+        # 1 - Update OpenES algo
         self.__update_NES_by_fitness(self.population_manager)
 
         # 2 - Update population parameters
@@ -144,7 +139,7 @@ class NES(Algorithm): # Natural Evolution Strategies
     def __update_population_parameter(self, population_manager:Population) -> None:
         # 1 - Get parameters from OpenES algorithms
         genomes_dict:Dict[int, Genome_NN] = population_manager.population
-        self.population_parameters = self.nes_algo.get_parameters()
+        self.population_parameters = self.openES_algo.get_parameters()
 
 
         # 2 - Update parameters in the population
@@ -178,5 +173,5 @@ class NES(Algorithm): # Natural Evolution Strategies
             fitnesses.append(genome.fitness.score)
         fitnesses:np.ndarray = np.array(fitnesses)
 
-        # Update NES
-        self.nes_algo.update(None, fitnesses)
+        # Update OpenES
+        self.openES_algo.update(None, fitnesses)

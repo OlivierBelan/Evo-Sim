@@ -140,7 +140,7 @@ class NN:
             # Set Static parameters -> Only the weights are dynamic
             self.parameters["voltage"][:] = 0.0
             self.parameters["threshold"][:] = 0.1
-            self.parameters["tau"][:] = 0.5
+            self.parameters["tau"][:] = 200.0
             self.parameters["input_current"][:] = 0.0
 
             if weight_random == True: self.parameters["weight"][self.synapses_actives_indexes] = np.random.uniform(-1, 1, self.synapses_actives_indexes[0].size) #self.weight_parameters[index]

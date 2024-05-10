@@ -5,7 +5,7 @@ from evo_simulator.ALGORITHMS.NES.fitness_shaping import compute_centered_fitnes
 # adopted from:
 #https://github.com/hardmaru/estool/blob/master/es.py
 
-class OpenAI_ES:
+class OpenES_algo:
   ''' Basic Version of OpenAI Evolution Strategies.'''
   def __init__(self,
               # 0. Major params

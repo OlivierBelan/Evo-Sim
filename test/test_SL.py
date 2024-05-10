@@ -17,6 +17,7 @@ from evo_simulator.ALGORITHMS.NEAT.Neat import NEAT
 from evo_simulator.ALGORITHMS.GA.GA import GA
 from evo_simulator.ALGORITHMS.CMA_ES.CMA_ES import CMA_ES
 from evo_simulator.ALGORITHMS.NES.NES import NES
+from evo_simulator.ALGORITHMS.NES.OpenES import OpenES
 from evo_simulator.ALGORITHMS.MAP_ELITE.MAP_ELITE import MAP_ELITE
 from evo_simulator.ALGORITHMS.NSLC.NSLC import NSLC
 
@@ -123,6 +124,14 @@ def nes_func(name, config_path) -> Tuple[Neuro_Evolution, str]:
     
     return name, NES, neat_config_path
 
+def openES_func(name, config_path) -> Tuple[Neuro_Evolution, str]:
+    # 1 - Config path file
+    local_dir = os.path.dirname(__file__)
+    neat_config_path = os.path.join(local_dir, start_config_path + config_path)
+    
+    # 2 - Algorithms
+    return name, OpenES, neat_config_path
+
 # def map_elite(config_path) -> Tuple[Neuro_Evolution, str]:
 #     # 1 - Config path file
 #     local_dir = os.path.dirname(__file__)
@@ -160,21 +169,22 @@ def neuro_evo_func(args:List[str]):
 
     # 1.0 - Algorithms
     aglos_dict:Dict[str, Tuple[str, Neuro_Evolution, str]] = {
-        "NEAT":           neat_func("NEAT_CONFIG_SL"),
-        "GA"  :           ga_func("GA_CONFIG_SL"),
-        "CMA_ES":         cma_es_func("CMA_ES_CONFIG_SL"),
-        "NES":            nes_func("NES","NES_CONFIG_SL"),
-        "OPENAI_ES":      nes_func("OPENAI_ES", "OPENAI_ES_CONFIG_SL"),
-        "HyperNEAT":      neat_func("HyperNEAT_CONFIG_SL"),
-        # "MAP_ELITE":      map_elite("MAP_ELITE_CONFIG_SL"),
-        # "NSLC":           nslc("NSLC_CONFIG_SL"),
-        # "ES-HyperNEAT":   neat_func("ES_HyperNEAT_CONFIG_SL"), # Coming soon
+        "NEAT":           neat_func("NEAT_CONFIG_SL.cfg"),
+        "GA"  :           ga_func("GA_CONFIG_SL.cfg"),
+        "CMA_ES":         cma_es_func("CMA_ES_CONFIG_SL.cfg"),
+        "NES":            nes_func("NES","NES_CONFIG_SL.cfg"),
+        "OpenES":         openES_func("OpenES", "OpenES_CONFIG_SL.cfg"),
 
-        "DE-evosax":      algo_jax_func("DE-evosax","DE-evosax_CONFIG_SL"),
-        "ARS-evosax":     algo_jax_func("ARS-evosax", "ARS-evosax_CONFIG_SL"),
-        "NES-evosax":     algo_jax_func("NES-evosax", "NES-evosax_CONFIG_SL"),
-        "PEPG-evosax":    algo_jax_func("PEPG-evosax", "PEPG-evosax_CONFIG_SL"),
-        "OpenES-evosax":  algo_jax_func("OPENES-evosax", "OPENES-evosax_CONFIG_SL"),
+        # "HyperNEAT":      neat_func("HyperNEAT_CONFIG_SL.cfg"),
+        # "MAP_ELITE":      map_elite("MAP_ELITE_CONFIG_SL.cfg"),
+        # "NSLC":           nslc("NSLC_CONFIG_SL.cfg"),
+        # "ES-HyperNEAT":   neat_func("ES_HyperNEAT_CONFIG_SL.cfg"), # Coming soon
+
+        "DE-evosax":      algo_jax_func("DE-evosax","DE-evosax_CONFIG_SL.cfg"),
+        "ARS-evosax":     algo_jax_func("ARS-evosax", "ARS-evosax_CONFIG_SL.cfg"),
+        "NES-evosax":     algo_jax_func("NES-evosax", "NES-evosax_CONFIG_SL.cfg"),
+        "PEPG-evosax":    algo_jax_func("PEPG-evosax", "PEPG-evosax_CONFIG_SL.cfg"),
+        "OpenES-evosax":  algo_jax_func("OPENES-evosax", "OPENES-evosax_CONFIG_SL.cfg"),
 
     }
     name, algorithm, config_path = aglos_dict[args[0]]

@@ -117,3 +117,17 @@ def architecture_from_config(architecture:str, nb_layers:int) -> Tuple[List[List
     if is_inputs == False or is_outputs == False: raise Exception("architecture_from_config: architecture must contain at least one input ( I ) and one output (O)")
     if len(hiddens_layer_names) != nb_layers: raise Exception("archi must contain the same number of hidden layers in hiddens config -> architecture_hidden : architecture ( " +str(len(hiddens_layer_names))+" ) != hidden_config (layers) nb ( "+str(nb_layers)+" )" )
     return archictecture_config, hiddens_layer_names
+
+
+@staticmethod
+@nb.njit(cache=True, fastmath=True, nogil=True)
+def epsilon_mu_sigma_jit(parameter:np.ndarray, mu_parameter:np.ndarray, sigma_paramater:np.ndarray, min:np.ndarray, max:np.ndarray, mu_bias:float=0, sigma_coef:float=1.0) -> np.ndarray:
+    '''
+    Jit function for the epsilon computation
+    '''
+    # 1- set Epislon with the Gaussian (from randn) distribution (Mu -> center of the distribution, Sigma -> width of the distribution)
+    mu:np.ndarray = mu_parameter + mu_bias
+    sigma:np.ndarray = sigma_paramater * sigma_coef
+    epsilon:np.ndarray = np.random.randn(1, parameter.size) * sigma + mu
+    # 2- clip Epsilon and apply it to the neurons parameters
+    return np.clip(epsilon.astype(np.float32)[0], min, max)

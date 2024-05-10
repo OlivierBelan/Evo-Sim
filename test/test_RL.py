@@ -19,6 +19,7 @@ from evo_simulator.ALGORITHMS.NEAT.Neat import NEAT
 from evo_simulator.ALGORITHMS.GA.GA import GA
 from evo_simulator.ALGORITHMS.CMA_ES.CMA_ES import CMA_ES
 from evo_simulator.ALGORITHMS.NES.NES import NES
+from evo_simulator.ALGORITHMS.NES.OpenES import OpenES
 from evo_simulator.ALGORITHMS.MAP_ELITE.MAP_ELITE import MAP_ELITE
 from evo_simulator.ALGORITHMS.NSLC.NSLC import NSLC
 # from evo_simulator.ALGORITHMS.HyperNEAT.HyperNEAT import HyperNEAT
@@ -93,6 +94,13 @@ def nes_func(name, config_path) -> Tuple[Neuro_Evolution, str]:
     # 2 - Algorithms
     return name, NES, neat_config_path
 
+def openES_func(name, config_path) -> Tuple[Neuro_Evolution, str]:
+    # 1 - Config path file
+    local_dir = os.path.dirname(__file__)
+    neat_config_path = os.path.join(local_dir, start_config_path + config_path)
+    
+    # 2 - Algorithms
+    return name, OpenES, neat_config_path
 
 
 # Algo Multi-Objective
@@ -129,8 +137,9 @@ def neuro_evo_matrix_func(args:List[str]):
         "NEAT":           neat_func("NEAT_CONFIG_RL.cfg"),
         "GA":             ga_func("GA_CONFIG_RL.cfg"),
         "CMA_ES":         cma_es_func("CMA_ES_CONFIG_RL.cfg"),
-        "NES":            nes_func("PEPG","PEPG_CONFIG_RL.cfg"),
-        "OPENAI_ES":      nes_func("OPENAI_ES", "OPENAI_ES_CONFIG_RL.cfg"),
+        "NES":            nes_func("NES","NES_CONFIG_RL.cfg"),
+        "OpenES":         openES_func("OpenES", "OpenES_CONFIG_RL.cfg"),
+        # "HyperNEAT":      hyperneat_func("HyperNEAT_CONFIG_RL.cfg"), # "HyperNEAT_CONFIG_RL.cfg
 
         # 1.2 - Algorithms Multi-Objective
         "MAP_ELITE":      map_elite("MAP_ELITE_CONFIG_RL.cfg"),
@@ -156,7 +165,6 @@ def neuro_evo_matrix_func(args:List[str]):
     print("seeds: ", seeds)
 
     for name, algorithm, config_path in algos:
-        if name == "OPENAI_ES": name = "OPENES"
         # 2 - Environnement
 
         # 2.1 - Discrete
@@ -166,7 +174,7 @@ def neuro_evo_matrix_func(args:List[str]):
         # environnement:Lunar_Lander = Lunar_Lander("LunarLander", config_path, nb_input=8, nb_output=4, obs_max_init_value=5, obs_min_init_value=-5, auto_obersvation=False)
 
         # 2.2 - Continuous
-        # environnement:Mountain_Car_Continuous = Mountain_Car_Continuous("MountainCarContinous", config_path, nb_input=2, nb_output=1, obs_max_init_value=5, obs_min_init_value=-5, auto_obersvation=True)
+        environnement:Mountain_Car_Continuous = Mountain_Car_Continuous("MountainCarContinous", config_path, nb_input=2, nb_output=1, obs_max_init_value=5, obs_min_init_value=-5, auto_obersvation=True)
         # environnement:Pendulum = Pendulum("Pendulum", config_path, nb_input=3, nb_output=1, obs_max_init_value=5, obs_min_init_value=-5, auto_obersvation=True)
         # environnement:Lunar_Lander = Lunar_Lander_Continuous("LunarLanderContinuous", config_path, nb_input=8, nb_output=2, obs_max_init_value=5, obs_min_init_value=-5, auto_obersvation=False)
         # environnement:Bipedal_Walker = Bipedal_Walker("BipedWalker", config_path, nb_input=24, nb_output=4, obs_max_init_value=5, obs_min_init_value=-5, auto_obersvation=False, hardcore=False)
@@ -175,7 +183,7 @@ def neuro_evo_matrix_func(args:List[str]):
         # 2.3 - Continuous Robot
         # environnement:Swimmer = Swimmer("Swimmer", config_path, nb_input=8, nb_output=2, obs_max_init_value=5, obs_min_init_value=-5, auto_obersvation=True)
         # environnement:Hopper = Hopper("Hopper", config_path, nb_input=11, nb_output=3, obs_max_init_value=5, obs_min_init_value=-5, auto_obersvation=True)
-        environnement:HalfCheetah = HalfCheetah("HalfCheetah", config_path, nb_input=17, nb_output=6, obs_max_init_value=5, obs_min_init_value=-5, auto_obersvation=True)
+        # environnement:HalfCheetah = HalfCheetah("HalfCheetah", config_path, nb_input=17, nb_output=6, obs_max_init_value=5, obs_min_init_value=-5, auto_obersvation=True)
         # environnement:Walker2D = Walker2D("Walker2D", config_path, nb_input=17, nb_output=6, obs_max_init_value=5, obs_min_init_value=-5, auto_obersvation=True)
         # environnement:Ant = Ant("Ant", config_path, nb_input=27, nb_output=8, obs_max_init_value=5, obs_min_init_value=-5, auto_obersvation=True)
 

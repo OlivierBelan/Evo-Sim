@@ -373,7 +373,8 @@ class NN_Custom_torch(nn.Module):
                 layer["bias"] = torch.tensor(biases[biases_index:biases_index+layer["size"]]).to(device)
                 biases_index += layer["size"]
 
-device = "cpu"
+
+device = "cpu" # cuda or cpu
 
 class ANN_Runner():
     def __init__(self, config_path_file:str):
