@@ -221,8 +221,14 @@ class NN:
                 self.parameters["bias"][:] = np.random.uniform(self.attributes_manager.min_parameters["bias"], self.attributes_manager.max_parameters["bias"], self.nb_neurons)
             else:
                 self.parameters["bias"][:] = 0.0
-            self.parameters["weight"][self.synapses_actives_indexes] = np.random.uniform(self.attributes_manager.min_parameters["weight"], self.attributes_manager.max_parameters["weight"], self.synapses_actives_indexes[0].size)
-
+            # self.parameters["weight"][self.synapses_actives_indexes] = np.random.uniform(self.attributes_manager.min_parameters["weight"], self.attributes_manager.max_parameters["weight"], self.synapses_actives_indexes[0].size)
+            self.parameters["weight"][self.synapses_actives_indexes] = self.epsilon_mu_sigma_jit(self.parameters["weight"][self.synapses_actives_indexes], 
+                                                                        self.attributes_manager.mu_parameters["weight"], 
+                                                                        self.attributes_manager.sigma_parameters["weight"], 
+                                                                        self.attributes_manager.min_parameters["weight"], 
+                                                                        self.attributes_manager.max_parameters["weight"], 
+                                                                        0.0, 
+                                                                        1.0)
 
     def update_indexes(self):
         self.neuron_actives_indexes, self.hiddens["neurons_indexes_active"], self.synapses_actives_indexes, self.synapses_unactives_indexes, self.synapses_unactives_weight_indexes = self.update_indexes_jit(

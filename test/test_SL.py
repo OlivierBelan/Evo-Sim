@@ -21,7 +21,7 @@ from evo_simulator.ALGORITHMS.NES.OpenES import OpenES
 from evo_simulator.ALGORITHMS.MAP_ELITE.MAP_ELITE import MAP_ELITE
 from evo_simulator.ALGORITHMS.NSLC.NSLC import NSLC
 
-from evo_simulator.ALGORITHMS.JAX_algo.jax_algo import Jax_algo
+from evo_simulator.ALGORITHMS.EvoSAX.EvoSax_algo import EvoSax_algo
 
 import numpy as np
 np.set_printoptions(threshold=sys.maxsize)
@@ -153,12 +153,12 @@ def openES_func(name, config_path) -> Tuple[Neuro_Evolution, str]:
 #     return nslc_algorithm, config_path
 
 
-def algo_jax_func(name:str, config_path) -> Tuple[Neuro_Evolution, str]:
+def evosax_func(name:str, config_path) -> Tuple[Neuro_Evolution, str]:
     # 1 - Config path file
     local_dir = os.path.dirname(__file__)
     config_path = os.path.join(local_dir, start_config_path + config_path)
     
-    return name, Jax_algo, config_path
+    return name, EvoSax_algo, config_path
 
 
 start_config_path = "./config/config_snn/SL/"
@@ -180,11 +180,11 @@ def neuro_evo_func(args:List[str]):
         # "NSLC":           nslc("NSLC_CONFIG_SL.cfg"),
         # "ES-HyperNEAT":   neat_func("ES_HyperNEAT_CONFIG_SL.cfg"), # Coming soon
 
-        "DE-evosax":      algo_jax_func("DE-evosax","DE-evosax_CONFIG_SL.cfg"),
-        "ARS-evosax":     algo_jax_func("ARS-evosax", "ARS-evosax_CONFIG_SL.cfg"),
-        "NES-evosax":     algo_jax_func("NES-evosax", "NES-evosax_CONFIG_SL.cfg"),
-        "PEPG-evosax":    algo_jax_func("PEPG-evosax", "PEPG-evosax_CONFIG_SL.cfg"),
-        "OpenES-evosax":  algo_jax_func("OPENES-evosax", "OPENES-evosax_CONFIG_SL.cfg"),
+        "DE-evosax":      evosax_func("DE-evosax","DE-evosax_CONFIG_SL.cfg"),
+        "ARS-evosax":     evosax_func("ARS-evosax", "ARS-evosax_CONFIG_SL.cfg"),
+        "NES-evosax":     evosax_func("NES-evosax", "NES-evosax_CONFIG_SL.cfg"),
+        "PEPG-evosax":    evosax_func("PEPG-evosax", "PEPG-evosax_CONFIG_SL.cfg"),
+        "OpenES-evosax":  evosax_func("OpenES-evosax", "OpenES-evosax_CONFIG_SL.cfg"),
 
     }
     name, algorithm, config_path = aglos_dict[args[0]]

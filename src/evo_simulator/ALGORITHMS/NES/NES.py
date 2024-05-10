@@ -119,8 +119,6 @@ class NES(Algorithm): # Natural Evolution Strategies
         while len(population) < self.pop_size:
             new_genome:Genome_NN = Genome_NN(get_new_genome_id(), self.config_es["Genome_NN"], self.attributes_manager)
             new_genome.nn.set_arbitrary_parameters(is_random=False, weight_random=False)
-            population[new_genome.id] = new_genome
-
             for param_name in parameters_names:
                 if param_name in new_genome.nn.parameters: # Parameters are set from the attributes_manager which contains information from your config file otherwise it will set by arbitrary values
                     if param_name == "weight" or param_name == "delay": # synapses parameters
@@ -139,6 +137,7 @@ class NES(Algorithm): # Natural Evolution Strategies
                                                                                         min=self.attributes_manager.min_parameters[param_name],
                                                                                         max=self.attributes_manager.max_parameters[param_name],
                     )
+            population[new_genome.id] = new_genome
 
 
     def __update_population_parameter(self, population_manager:Population) -> None:
@@ -154,16 +153,13 @@ class NES(Algorithm): # Natural Evolution Strategies
                 nn.parameters["weight"] = nn.parameters["weight"].copy()
 
             # 2.2 Update Weight parameters
-            if self.network_type == "ANN":
-                if self.is_neuron_param == True:
-                    nn.parameters["weight"][nn.synapses_actives_indexes] = self.population_parameters[index][:self.synapse_parameters_size]
+            if self.network_type == "ANN" and self.is_neuron_param == True:
+                nn.parameters["weight"][nn.synapses_actives_indexes] = self.population_parameters[index][:self.synapse_parameters_size]
 
-                    if nn.parameters["bias"].flags.writeable == False: nn.parameters["bias"] = nn.parameters["weight"].copy()
-                    nn.parameters["bias"] = self.population_parameters[index][self.synapse_parameters_size:]
-                else:
-                    nn.parameters["weight"][nn.synapses_actives_indexes] = self.population_parameters[index]
+                if nn.parameters["bias"].flags.writeable == False: nn.parameters["bias"] = nn.parameters["weight"].copy()
+                nn.parameters["bias"] = self.population_parameters[index][self.synapse_parameters_size:]
 
-            elif self.network_type == "SNN":
+            elif self.network_type == "SNN" or (self.network_type == "ANN" and self.is_neuron_param == False):
                 nn.parameters["weight"][nn.synapses_actives_indexes] = self.population_parameters[index]
             
 
