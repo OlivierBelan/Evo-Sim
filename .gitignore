@@ -7,4 +7,5 @@ env/
 *.o
 *.zip
 .vscode/
-*pyc
+*.nbc
+*.nbi
