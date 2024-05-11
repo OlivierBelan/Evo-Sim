@@ -1,5 +1,5 @@
 import gymnasium as gym
-# from problem.RL import QDgym
+from problem.RL import QDgym
 from typing import List, Callable, Any
 from evo_simulator.GENERAL.Fitness import Fitness
 from evo_simulator.GENERAL.Genome import Genome_NN

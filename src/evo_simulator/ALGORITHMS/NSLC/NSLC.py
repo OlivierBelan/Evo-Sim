@@ -3,13 +3,12 @@ from evo_simulator.GENERAL.Genome import Genome_NN, Genome_Classic, Genome
 import evo_simulator.TOOLS as TOOLS
 from evo_simulator.GENERAL.Index_Manager import get_new_genome_id, get_new_population_id
 from evo_simulator.GENERAL.Population import Population
-from evo_simulator.GENERAL.Distance import Distance
 from evo_simulator.GENERAL.Reproduction import Reproduction_NN, Reproduction_Classic
 from evo_simulator.ALGORITHMS.NEAT.Mutation import Mutation_NEAT
 from GENERAL.Mutation_NN import Mutation
 
 from evo_simulator.GENERAL.Archive import Archive
-from typing import Dict, Any, List, Callable
+from typing import Dict, Any, Tuple
 import numpy as np
 import numba as nb
 import random
@@ -18,15 +17,13 @@ import time
 
 
 class NSLC(Algorithm):
-    def __init__(self, config_path_file:str, nb_generation:int, name:str = "NSLC") -> None:
+    def __init__(self, config_path_file:str, name:str = "NSLC") -> None:
         Algorithm.__init__(self, config_path_file, name)
         # Initialize configs
         self.config_path_file:str = config_path_file
-        self.config_NSLC:Dict[str, Dict[str, Any]] = TOOLS.config_function(config_path_file, ["NSLC", "Archive","Genome_NN", "Genome_Classic","NEURO_EVOLUTION", "Reproduction"])
+        self.config_NSLC:Dict[str, Dict[str, Any]] = TOOLS.config_function(config_path_file, ["NSLC", "Archive", "Genome_NN", "NEURO_EVOLUTION", "Reproduction", "Mutation"])
         self.verbose:bool = True if self.config_NSLC["NSLC"]["verbose"] == "True" else False
         self.optimization_type:str = self.config_NSLC["NEURO_EVOLUTION"]["optimization_type"] # maximize, minimize, closest_to_zero
-        self.mutation_type:str = self.config_NSLC["NSLC"]["mutation_type"]
-        # a
 
         self.pop_size:int = int(self.config_NSLC["NSLC"]["pop_size"])
         self.neighbour_size:int = np.floor(self.pop_size * float(self.config_NSLC["NSLC"]["neighbourhood_ratio"])).astype(int)
@@ -36,32 +33,29 @@ class NSLC(Algorithm):
             raise Exception("update_population_type must be 'archive_best', 'archive_random' or 'population'")
         
         self.is_first_generation:bool = True
-        self.distance:Distance = Distance(config_path_file)
 
         self.population_manager:Population = Population(get_new_population_id(), config_path_file)
         self.reproduction:Reproduction_NN = Reproduction_NN(config_path_file, self.attributes_manager)
 
 
+        self.mutation_type:str = self.config_NSLC["Mutation"]["mutation_type"] # classic, topology, sbx
         self.mutation_neat:Mutation_NEAT = Mutation_NEAT(config_path_file, self.attributes_manager)
         self.mutation_ga:Mutation = Mutation(config_path_file, self.attributes_manager)
         self.is_sbx:str = True if self.config_NSLC["Reproduction"]["is_sbx"] == "True" else False
 
-        self.archive:Archive = Archive(config_path_file, self.__build_genome_function_nn, name=name, nb_generation=nb_generation)
+        self.archive:Archive = Archive(
+                                        config_section_name="Archive",
+                                        config_path_file=config_path_file,
+                                        genome_builder_function=self.__build_genome_function_nn
+                                        )
 
-        # self.__init_rastrigin(config_path_file, name)
+        # self.__init_rastrigin(config_path_file) # If we want to run the Rastrigin function (FOR TESTING RASTRIGIN FUNCTION & DEBUGGING)
 
 
     def first_generation(self, population_manager:Population) -> None:
-            self.ajust_population(population_manager)
-
-            # population:Dict[int, Genome_NN] = population_manager.population
-            # first_key:int = next(iter(population))
-            # self.nb_neurons:int = population[first_key].nn.nb_neurons
-            # self.__update_archive(population_manager, "fitness")
-            # self.__novelty_and_local_competition(population_manager)
-    
-    def ajust_population(self, population_manager:Population) -> None:
+        self.is_first_generation = False
         population:Dict[int, Genome_NN] = population_manager.population
+
         while len(population) < self.pop_size:
             new_genome:Genome_NN = Genome_NN(get_new_genome_id(), self.config_NSLC["Genome_NN"], self.attributes_manager)
             new_genome.nn.set_arbitrary_parameters(is_random=True)
@@ -74,28 +68,34 @@ class NSLC(Algorithm):
 
 
     def run(self, global_population:Population) -> Population:
+        # return self.run_rastrigin(global_population) ## FOR TESTING RASTRIGIN FUNCTION & DEBUGGING
 
-        # return self.run_rastrigin(global_population)
-
-        # 0 - Get random genome from the archive
+        # 0 - First generation - Build population
+        self.population_manager.population = global_population.population
         if self.is_first_generation == True:
-            self.is_first_generation = False
-            self.ajust_population(self.population_manager)
+            self.first_generation(self.population_manager)
             return self.population_manager
 
-        self.population_manager.population = global_population.population
 
         # 1 - Update archive
+        start_time = time.time()
         self.__update_archive(self.population_manager, "fitness")
+        print("NSLC: Update archive time:", time.time() - start_time, "s")
 
         # 2 - Novelty and local competition
+        start_time = time.time()
         self.__novelty_and_local_competition(self.population_manager)
+        print("NSLC: Novelty and local competition time:", time.time() - start_time, "s")
 
         # 3 - Reproduction
+        start_time = time.time()
         self.__reproduction(self.population_manager, self.pop_size, "novelty_competition_score", optimization_type=self.optimization_type)
+        print("NSLC: Reproduction time:", time.time() - start_time, "s")
 
         # 5 - Mutation
+        start_time = time.time()
         self.__mutation(self.population_manager) # A REVOIR
+        print("NSLC: Mutation time:", time.time() - start_time, "s")
 
 
         # 8 - Update population
@@ -112,16 +112,18 @@ class NSLC(Algorithm):
 
     def __mutation(self, population:Population) -> None:
         # GA mutation
-        if self.mutation_type == "GA":
+        if self.mutation_type == "classic":
+            if self.is_sbx == True: raise Exception("SBX mutation is activated in the config file (is_sbx = True) in Reproduction section, but the mutation type is classic, please set is_sbx = False or change the mutation type to sbx")
             self.__mutation_GA(population)
         # NEAT mutation
-        elif self.mutation_type == "NEAT":
+        elif self.mutation_type == "topology":
+            if self.is_sbx == True: raise Exception("SBX mutation is activated in the config file (is_sbx = True) in Reproduction section, but the mutation type is topology, please set is_sbx = False or change the mutation type to sbx")
             self.__mutation_neat(population)
-        elif self.mutation_type == "SBX":
+        elif self.mutation_type == "sbx":
             if self.is_sbx == False:
-                raise Exception("SBX mutation is not activated in the config file (is_sbx = False) in Reproduction section")                
+                raise Exception("SBX mutation is not activated in the config file (is_sbx = False) in Reproduction section, please set is_sbx = True or change the mutation type to classic or topology")                
         else: 
-            raise Exception("Mutation type not found, can be GA or NEAT or SBX")
+            raise Exception("Mutation type not found, can be classic or tpology or sbx")
 
     def __mutation_GA(self, population:Population) -> None:
         # 1 - Mutation (attributes only)
@@ -155,9 +157,9 @@ class NSLC(Algorithm):
 
         # 2 - Compute distance matrix
         if self.update_population_type == "archive_best" or self.update_population_type == "archive_random":
-            distances_matrix:np.ndarray = self.distance.euclidean_distance_matrix(description_archive, description_archive)
+            distances_matrix:np.ndarray = self.euclidean_distance_matrix(description_archive, description_archive)
         else:
-            distances_matrix:np.ndarray = self.distance.euclidean_distance_matrix(description_population, description_archive)
+            distances_matrix:np.ndarray = self.euclidean_distance_matrix(description_population, description_archive)
 
         # 3 - Compute Novelty score and Local competition score (Higher score is better)
         if self.is_local_competition == True:
@@ -165,7 +167,7 @@ class NSLC(Algorithm):
         else:
             competition_score, novelty_score = self.__compute_novelty_and_global_competition_score(distances_matrix, fitness_archive, self.neighbour_size, is_normalized=True, optimization_type=self.optimization_type)
 
-        # 5 - Get the n_pop_size indexes of the best combinations (novelty + competition) 
+        # 5 - Get the n_pop_size indexes of the best combinations (novelty + competition)
         novelty_competition_score:np.ndarray = (novelty_score + competition_score) # (Higher is better)
         if self.update_population_type == "archive_best":
             novelty_competition_score_sorted_indexes:np.ndarray = np.argsort(novelty_competition_score)[::-1][:self.pop_size] # used if we want to build new population from best archive
@@ -203,10 +205,14 @@ class NSLC(Algorithm):
 
     @staticmethod
     @nb.jit(nopython=True, cache=True, fastmath=True, nogil=True, parallel=True)
-    def __compute_novelty_and_local_competition_score(distance_matrix:np.ndarray, fitness_archive:np.ndarray, neighbour_size:int, is_normalized:bool=True, optimization_type:str = "maximize") -> np.ndarray:
+    def __compute_novelty_and_local_competition_score(distance_matrix:np.ndarray, fitness_archive:np.ndarray, neighbour_size_0:int, is_normalized:bool=True, optimization_type:str = "maximize") -> np.ndarray:
 
         # 1 - Compute Novelty and Competition score
         novelty_vector_neighbourhood:np.ndarray = np.empty((distance_matrix.shape[0]), dtype=np.float32)
+        if neighbour_size_0 >= distance_matrix.shape[0]:
+            neighbour_size:int = distance_matrix.shape[0] - 1
+        else:
+            neighbour_size:int = neighbour_size_0
         neighbour_size_plus_one:int = neighbour_size + 1
         fitness_matrix:np.ndarray = np.empty((distance_matrix.shape[0], neighbour_size_plus_one), dtype=np.float32)
         for i in nb.prange(distance_matrix.shape[0]):
@@ -237,10 +243,14 @@ class NSLC(Algorithm):
 
     @staticmethod
     @nb.jit(nopython=True, cache=True, fastmath=True, nogil=True, parallel=True)
-    def __compute_novelty_and_global_competition_score(distance_matrix:np.ndarray, fitness_archive:np.ndarray, neighbour_size:int, is_normalized:bool=True, optimization_type:str = "maximize") -> np.ndarray:
+    def __compute_novelty_and_global_competition_score(distance_matrix:np.ndarray, fitness_archive:np.ndarray, neighbour_size_0:int, is_normalized:bool=True, optimization_type:str = "maximize") -> np.ndarray:
 
         # 1 - Compute Novelty and Competition score
         novelty_vector_neighbourhood:np.ndarray = np.empty((distance_matrix.shape[0]), dtype=np.float32)
+        if neighbour_size_0 >= distance_matrix.shape[0]:
+            neighbour_size:int = distance_matrix.shape[0] - 1
+        else:
+            neighbour_size:int = neighbour_size_0
         neighbour_size_plus_one:int = neighbour_size + 1
         fitness_matrix:np.ndarray = np.empty((distance_matrix.shape[0], distance_matrix.shape[1]), dtype=np.float32)
         for i in nb.prange(distance_matrix.shape[0]):
@@ -379,6 +389,13 @@ class NSLC(Algorithm):
             return global_competition_vector
 
 
+    @staticmethod
+    @nb.njit(cache=True, fastmath=True, nogil=True)
+    def euclidean_distance_matrix(matrix_1: np.ndarray, matrix_2: np.ndarray) -> np.ndarray:
+        diff = matrix_1[:, np.newaxis, :] - matrix_2[np.newaxis, :, :]
+        distances = np.sqrt((diff**2).sum(axis=-1))
+        return distances
+
 
     # START test rastrigin
     def first_generation_rastrigin(self, population_manager:Population) -> None:
@@ -398,12 +415,16 @@ class NSLC(Algorithm):
         return population
 
 
-    def __init_rastrigin(self, config_path_file:str, decription_function:Callable=None, name:str = "NSLC") -> None:
+    def __init_rastrigin(self, config_path_file:str) -> None:
         # test rastrigin start
         self.reproduction:Reproduction_Classic = Reproduction_Classic(config_path_file, self.attributes_manager)
-        self.archive:Archive = Archive(config_path_file, self.__build_genome_function_classic, "NSLC_archive", nb_generation=10_000)
+        self.archive:Archive = Archive(
+                                        config_section_name="Archive",
+                                        config_path_file=config_path_file,
+                                        genome_builder_function=self.__build_genome_function_classic, 
+                                        )
         self.mutation:Mutation = Mutation(config_path_file, self.attributes_manager)
-        self.decription_function:Callable = decription_function
+        self.config_NSLC.update(TOOLS.config_function(config_path_file, ["Genome_Classic"]))
         self.parameter_size:int = int(self.config_NSLC["Genome_Classic"]["parameter_size"])
         # test rastrigin end
 
@@ -429,10 +450,8 @@ class NSLC(Algorithm):
         self.__novelty_and_local_competition(self.population_manager)
         # print("NSLC: Novelty and local competition time:", time.time() - start_time, "s")
 
-        # 7 - Print stats
-        self.__print_stats()
 
-        # 8 - Update population
+        # 7 - Update population
         global_population.population = self.archive.get_best_population().population
 
         return global_population
@@ -442,7 +461,7 @@ class NSLC(Algorithm):
         for genome in population_dict.values():
             genome.fitness.score, genome.info["description"] = self.__rastrigin_NSLC(genome.parameter)
 
-    def __rastrigin_NSLC(self, xx:np.ndarray) -> (float, np.ndarray):
+    def __rastrigin_NSLC(self, xx:np.ndarray) -> Tuple[float, np.ndarray]:
         x = xx * 10 - 5 # scaling to [-5, 5]
         f = 10 * x.shape[0] + (x * x - 10 * np.cos(2 * math.pi * x)).sum()
         return -f, np.array([xx[0], xx[1]])
@@ -460,40 +479,4 @@ class NSLC(Algorithm):
     def __mutation_rastrigin(self, population:Population) -> None:
         self.__mutation_classic(population)
     # END test rastrigin
-
-
-
-    def __get_info_stats_population(self):
-        stats:List[List[int, float, float, int]] = []
-        # self.population_manager.update_info()
-        best_fitness:float = self.population_manager.fitness.score
-        mean_fitness:float = self.population_manager.fitness.mean
-        stagnation:float = self.population_manager.stagnation
-        best_genome:Genome_Classic = self.population_manager.best_genome
-        nb_parameters:int = len(best_genome.parameter)
-        # nb_neurons:int = len(best_genome.nn.hiddens["neurons_indexes_active"])
-        # nb_synapses:int = best_genome.nn.synapses_actives_indexes[0].size
-        stats.append([0, len(self.population_manager.population), (best_genome.id, round(best_fitness, 3), nb_parameters), round(mean_fitness, 3), stagnation])
-        return stats
-
-    def __get_info_distance(self):
-        elite_id:int = self.population_manager.best_genome.id
-        population_ids:List[int] = self.population_manager.population.keys()
-        pop_dict:Dict[int, Genome_NN] = self.population_manager.population
-        self.distance.distance_genomes_list([elite_id], population_ids, pop_dict, reset_cache=True)
-        print("global distance:", self.distance.mean_distance["global"], ", local distance:", self.distance.mean_distance["local"])
-        mean_distance:float = self.distance.mean_distance["global"]
-        print("Mean_distance (compared with one elite only):", round(mean_distance, 3))
-
-    def __print_stats(self):
-        if self.verbose == False: return
-        self.population_manager.update_info()
-        # self.__get_info_distance()
-        print("--------------------------------------------------------------------------------------------------------------------->>> " +self.name)
-        titles = [[self.name, "Size", "Best(id, fit, neur, syn)", "Avg", "Stagnation"]]
-        titles.extend(self.__get_info_stats_population())
-        col_width = max(len(str(word)) for row in titles for word in row) + 2  # padding
-        for row in titles:
-            print("".join(str(word).ljust(col_width) for word in row))
-        print("\n")
     

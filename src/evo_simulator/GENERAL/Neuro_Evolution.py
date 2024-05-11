@@ -117,27 +117,11 @@ class Neuro_Evolution:
 
     def __get_archives_names(self, config_path:str) -> List[str]:
         config:Dict[str, Dict[str, Any]] = TOOLS.config_function_all(config_path)
-        self.archives_names:List[str] = []
+        self.archive_config_name_section:List[str] = []
         for section in config.keys():
             if section.startswith("Archive"):
                 self.archives_names.append(section)
     
-    def __update_archives(self, population:Population) -> None:
-        if self.is_Archive == True and self.generation > 0:
-            if self.archives == None:
-                self.archives:List[Archive] = []
-                for archive_name in self.archives_names:
-                    self.archives.append(Archive(
-                                            name=archive_name, 
-                                            algorithm_name=self.algorithm_name, 
-                                            config_path_file=self.config_path, 
-                                            genome_builder_function=None, 
-                                            nb_generation=self.nb_generations, 
-                                            reproduction_size=self.algorithm.pop_size, 
-                                            folder_path=self.record.folder_run_path if self.is_record == True else "./tpm_archive/"
-                                            ))
-            for archive in self.archives:
-                archive.update(population)
 
     def __build_config_cache(self, config_path:str, config_cache_path:str) -> None:
         config_name = config_path.split("/")[-1]
@@ -161,17 +145,11 @@ class Neuro_Evolution:
         self.config_path_algorithm:str = self.__build_config_cache(config_path, os.getcwd() + "/config_cache/")
         self.algorithm_builder:Algorithm = algorithm_builder
         self.algorithm_name_init:str = name
-        if name == "MAPELITE" or name == "NSLC":
-            self.algorithm:Algorithm = self.algorithm_builder(self.config_path_algorithm, self.nb_generations, name, "test_results/")
-        else:
-            self.algorithm:Algorithm = self.algorithm_builder(self.config_path_algorithm, name)
+        # self.algorithm:Algorithm = self.algorithm_builder(self.config_path_algorithm, name)
         self.algorithm_name:str = self.config["NEURO_EVOLUTION"]["algo_name"]
     
     def re_init_algorithm(self, run_nb:int) -> Algorithm:
-        if self.algorithm_name_init == "MAPELITE" or self.algorithm_name_init == "NSLC":
-            self.algorithm:Algorithm = self.algorithm_builder(self.config_path_algorithm, self.nb_generations, self.algorithm_name_init, "test_results/")
-        else:
-            self.algorithm:Algorithm = self.algorithm_builder(self.config_path_algorithm, self.algorithm_name_init)
+        self.algorithm:Algorithm = self.algorithm_builder(self.config_path_algorithm, self.algorithm_name_init)
 
         if self.problem_type == "RL":
             self.obs_max:np.ndarray = None
@@ -276,8 +254,8 @@ class Neuro_Evolution:
 
     def run_parallele(self):
         self.run_nb:int = 0
-        pop_size:int = self.algorithm.pop_size
-        if pop_size == None: raise ValueError("pop_size must be set in the algorithm")
+        # pop_size:int = self.algorithm.pop_size
+        # if pop_size == None: raise ValueError("pop_size must be set in the algorithm")
         populations_cpu:List[Population] = [Population(get_new_population_id(), self.config_path) for _ in range(self.cpu)]
 
         for self.run_nb in range(self.nb_runs):
@@ -383,15 +361,11 @@ class Neuro_Evolution:
         if self.is_Archive == True and self.generation > 0:
             if self.archives == None:
                 self.archives:List[Archive] = []
-                for archive_name in self.archives_names:
+                for archive_name in self.archive_config_name_section:
                     self.archives.append(Archive(
-                                            name=archive_name, 
-                                            algorithm_name=self.algorithm_name, 
+                                            config_section_name=archive_name, 
                                             config_path_file=self.config_path, 
                                             genome_builder_function=None, 
-                                            nb_generation=self.nb_generations, 
-                                            reproduction_size=self.algorithm.pop_size, 
-                                            folder_path=self.record.folder_run_path if self.is_record == True else "./tpm_archive/"
                                             ))
             for archive in self.archives:
                 archive.update(population)
@@ -410,7 +384,7 @@ class Neuro_Evolution:
                     else:
                         self.environment_name:str =  self.algorithm_name + "_" + self.problem_type + "_" + self.network_type + "-pop-" + str(len(population.population)) + "-neuron-" + str(self.nb_hidden_neurons)
                 self.record:Record = Record(self.config_path, self.environment_name)
-            if self.algorithm_name == "MAPELITE" or self.algorithm_name == "NSLC":
+            if self.record.record_from_algo == True: # Need find a better way to do this....
                 self.record.save_info(self.algorithm.population_best, self.run_nb)
             else:
                 self.record.save_info(population, self.run_nb)
@@ -430,17 +404,18 @@ class Neuro_Evolution:
 
     def __render(self, population:Population) -> None:
         if self.problem_type == "RL" and self.render == True:
-            # note -> on ne peut faire le meilleur genome ever car les obs_max et obs_min ne sont pas les memes à la fin de la run
-            if self.algorithm_name == "MAPELITE" or self.algorithm_name == "NSLC":
-                print("QD RENDER")
-                QD_population:Population = self.algorithm.population_best
-                QD_population.update_info()
-                QD_best:Genome = QD_population.best_genome
-                print("QD_best:", QD_best, "id",QD_best.id)
-                print("QD_best observation:", QD_best.info["obs_max"], QD_best.info["obs_min"])
-                self.run_runder_RL(QD_best, QD_best.info["obs_max"], QD_best.info["obs_min"])
-            else:
-                self.run_runder_RL(population.best_genome, self.prev_obs_max, self.prev_obs_min)
+        # note -> on ne peut faire le meilleur genome ever car les obs_max et obs_min ne sont pas les memes à la fin de la run
+
+            # if self.algorithm_name == "MAPELITE" or self.algorithm_name == "NSLC":
+            #     print("QD RENDER")
+            #     QD_population:Population = self.algorithm.population_best
+            #     QD_population.update_info()
+            #     QD_best:Genome = QD_population.best_genome
+            #     print("QD_best:", QD_best, "id",QD_best.id)
+            #     print("QD_best observation:", QD_best.info["obs_max"], QD_best.info["obs_min"])
+            #     self.run_runder_RL(QD_best, QD_best.info["obs_max"], QD_best.info["obs_min"])
+            # else:
+            self.run_runder_RL(population.best_genome, self.prev_obs_max, self.prev_obs_min)
 
     def print_info_run(self) -> None:
         if self.network_type == "SNN":

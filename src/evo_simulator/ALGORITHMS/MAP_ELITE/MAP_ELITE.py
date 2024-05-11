@@ -3,13 +3,12 @@ from evo_simulator.GENERAL.Genome import Genome_NN, Genome_Classic
 import evo_simulator.TOOLS as TOOLS
 from evo_simulator.GENERAL.Index_Manager import get_new_genome_id
 from evo_simulator.GENERAL.Population import Population
-from evo_simulator.GENERAL.Distance import Distance
 from evo_simulator.GENERAL.Reproduction import Reproduction_NN, Reproduction_Classic
 from evo_simulator.ALGORITHMS.NEAT.Mutation import Mutation_NEAT
 from GENERAL.Mutation_NN import Mutation
 from evo_simulator.GENERAL.Archive import Archive
 # from evo_simulator.GENERAL.__Archive_old import Archive
-from typing import Dict, Any, List, Callable
+from typing import Dict, Any, List, Tuple
 import random
 import time
 import math
@@ -17,36 +16,40 @@ import numpy as np
 
 
 class MAP_ELITE(Algorithm):
-    def __init__(self, config_path_file:str, nb_generation:int, name:str = "MAP_ELITE", archive_folder_path:str="") -> None:
+    def __init__(self, config_path_file:str, name:str = "MAP_ELITE") -> None:
         Algorithm.__init__(self, config_path_file, name)
         # Initialize configs
-        self.config_map_elite:Dict[str, Dict[str, Any]] = TOOLS.config_function(config_path_file, ["MAP_ELITE", "Archive", "Genome_NN", "Genome_Classic", "Reproduction"])
+        self.config_map_elite:Dict[str, Dict[str, Any]] = TOOLS.config_function(config_path_file, ["MAP_ELITE", "Archive", "Genome_NN", "Reproduction", "Mutation"])
         self.verbose:bool = True if self.config_map_elite["MAP_ELITE"]["verbose"] == "True" else False
         self.pop_size:int = int(self.config_map_elite["MAP_ELITE"]["pop_size"])
-        self.mutation_type:str = self.config_map_elite["MAP_ELITE"]["mutation_type"]
+        self.mutation_type:str = self.config_map_elite["Mutation"]["mutation_type"]
+        self.start_using_archive_ratio:float = float(self.config_map_elite["MAP_ELITE"]["start_using_archive_ratio"])
 
         self.is_first_generation:bool = True
-        self.distance:Distance = Distance(config_path_file)
+
 
         self.reproduction:Reproduction_NN = Reproduction_NN(config_path_file, self.attributes_manager)
-
         self.mutation_neat:Mutation_NEAT = Mutation_NEAT(config_path_file, self.attributes_manager)
         self.mutation_ga:Mutation = Mutation(config_path_file, self.attributes_manager)
         self.is_sbx:str = True if self.config_map_elite["Reproduction"]["is_sbx"] == "True" else False
 
-        # self.archive:Archive = Archive(config_path_file, self.__build_genome_function_nn, name=name, nb_generation=nb_generation, folder_path=archive_folder_path)
+        self.archive:Archive = Archive(
+                                    config_section_name="Archive",
+                                    config_path_file=config_path_file, 
+                                    genome_builder_function=self.__build_genome_function_nn
+                                    )
 
         # test rastrigin
-        self.__init_rastigin(config_path_file, name, nb_generation, archive_folder_path)
+        # self.__init_rastigin(config_path_file) ## FOR TESTING RASTRIGIN FUNCTION & DEBUGGING
 
     def run(self, global_population:Population) -> Population:
 
-        return self.run_rastrigin(global_population)
+        # return self.run_rastrigin(global_population) ## FOR TESTING RASTRIGIN FUNCTION & DEBUGGING
 
         # 0 - Get random genome from the archive
         if self.is_first_generation == True:
             self.is_first_generation = False
-            self.population_manager:Population = self.archive.get_random_archive_genome()
+            self.population_manager = self.__get_genome_from_archive()
             return self.population_manager
 
         # 1 - Update archive
@@ -54,7 +57,7 @@ class MAP_ELITE(Algorithm):
         self.archive.update(self.population_manager)
 
         # 2 - Get genome from the archive
-        self.population_manager:Population = self.archive.get_random_archive_genome()
+        self.population_manager = self.__get_genome_from_archive()
 
         # 3 - Reproduction
         self.__reproduction(self.population_manager) # A REVOIR
@@ -62,7 +65,7 @@ class MAP_ELITE(Algorithm):
         # 4 - Mutation
         self.__mutation(self.population_manager) # A REVOIR
 
-        # 6 - Get best genome from the archive (10 best)
+        # 6 - Get best genome from the archive (n best)
         self.population_best = self.archive.get_best_population()
 
         # 7 - Update population
@@ -76,24 +79,30 @@ class MAP_ELITE(Algorithm):
         new_genome.nn.set_arbitrary_parameters(is_random=True)
         return new_genome
 
+    def __get_genome_from_archive(self) -> Population:
+        if self.archive.get_archive_filled_ratio() < self.start_using_archive_ratio or self.archive.get_archive_filled_nb() < self.pop_size:
+            return self.archive.get_new_random_genome_not_from_archive(self.pop_size)
+        else:
+            return self.archive.get_random_genome_from_archive(self.pop_size)
+
     def __reproduction(self, population:Population) -> None:
         # 1- Reproduction
         population.population = self.reproduction.reproduction(population, self.pop_size)
 
     def __mutation(self, population:Population) -> None:
         # GA mutation
-        if self.mutation_type == "GA":
-            if self.is_sbx == True: raise Exception("SBX mutation is activated in the config file (is_sbx = True) in Reproduction section, but the mutation type is GA")
+        if self.mutation_type == "classic":
+            if self.is_sbx == True: raise Exception("SBX mutation is activated in the config file (is_sbx = True) in Reproduction section, but the mutation type is classic, please set is_sbx = False or change the mutation type to sbx")
             self.__mutation_GA(population)
         # NEAT mutation
-        elif self.mutation_type == "NEAT":
-            if self.is_sbx == True: raise Exception("SBX mutation is activated in the config file (is_sbx = True) in Reproduction section, but the mutation type is NEAT")
+        elif self.mutation_type == "topology":
+            if self.is_sbx == True: raise Exception("SBX mutation is activated in the config file (is_sbx = True) in Reproduction section, but the mutation type is topology, please set is_sbx = False or change the mutation type to sbx")
             self.__mutation_neat(population)
-        elif self.mutation_type == "SBX":
+        elif self.mutation_type == "sbx":
             if self.is_sbx == False:
-                raise Exception("SBX mutation is not activated in the config file (is_sbx = False) in Reproduction section")                
+                raise Exception("SBX mutation is not activated in the config file (is_sbx = False) in Reproduction section, please set is_sbx = True or change the mutation type to classic or topology")                
         else: 
-            raise Exception("Mutation type not found, can be GA or NEAT or SBX")
+            raise Exception("Mutation type not found, can be classic or topology or sbx")
 
     def __mutation_GA(self, population:Population) -> None:
         # 1 - Mutation (attributes only)
@@ -117,17 +126,26 @@ class MAP_ELITE(Algorithm):
 
 
     # START test rastrigin
-    def __init_rastigin(self, config_path_file:str, name:str = "MAP_ELITE", nb_generation:int=-1, archive_folder_path="") -> None:
+    def __init_rastigin(self, config_path_file:str) -> None:
         # test rastrigin
         self.reproduction:Reproduction_Classic = Reproduction_Classic(config_path_file, self.attributes_manager)
-        self.archive:Archive = Archive(config_path_file, self.__build_genome_function_classic, name=name, nb_generation=nb_generation, folder_path=archive_folder_path)
+        # self.archive:Archive = Archive(config_path_file, self.__build_genome_function_classic, name=name, nb_generation=nb_generation, folder_path=archive_folder_path)
+        self.archive:Archive = Archive(
+                                    config_section_name="Archive",
+                                    config_path_file=config_path_file, 
+                                    genome_builder_function=self.__build_genome_function_classic
+                                    )
         self.mutation:Mutation = Mutation(config_path_file, self.attributes_manager)
+        self.config_map_elite.update(TOOLS.config_function(config_path_file, ["Genome_Classic"]))
         self.parameter_size:int = int(self.config_map_elite["Genome_Classic"]["parameter_size"])
 
 
     def run_rastrigin(self, global_population:Population) -> Population:
         # 0 - Get random genome from the archive
-        self.population_manager:Population = self.archive.get_random_archive_genome()
+        if self.archive.get_archive_filled_ratio() < self.start_using_archive_ratio or self.archive.get_archive_filled_nb() < self.pop_size:
+            self.population_manager:Population = self.archive.get_new_random_genome_not_from_archive(self.pop_size)
+        else:
+            self.population_manager:Population = self.archive.get_random_genome_from_archive(self.pop_size)
         
         # 1 - Reproduction
         self.__reproduction_rastrigin(self.population_manager)
@@ -157,7 +175,7 @@ class MAP_ELITE(Algorithm):
         for genome in population_dict.values():
             genome.fitness.score, genome.info["description"] = self.__rastrigin_map_elite(genome.parameter)
 
-    def __rastrigin_map_elite(self, xx:np.ndarray) -> (float, np.ndarray):
+    def __rastrigin_map_elite(self, xx:np.ndarray) -> Tuple[float, np.ndarray]:
         x = xx * 10 - 5 # scaling to [-5, 5]
         f = 10 * x.shape[0] + (x * x - 10 * np.cos(2 * math.pi * x)).sum()
         return -f, np.array([xx[0], xx[1]])

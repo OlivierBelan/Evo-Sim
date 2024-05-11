@@ -366,16 +366,16 @@ class Reproduction_NN(Reproduction):
         # Initialize configs
         self.config:Dict[str, Dict[str, Any]] = TOOLS.config_function(config_path_file, ["Genome_NN"])
         self.network_type:str = self.config["Genome_NN"]["network_type"]
+        self.parameters_name_neuron:List[str] = attributes.parameters_neuron_names
+        self.parameters_name_synapse:List[str] = attributes.parameters_synapse_names
         
         if self.network_type == "SNN":
             # self.parameters_name_neuron:List[str] = ["voltage", "threshold", "tau", "input_current", "refractory"]
             # self.parameters_name_synapse:List[str] = ["weight", "delay"]
-            self.parameters_name_neuron:List[str] = ["voltage", "threshold", "tau", "input_current"]
-            self.parameters_name_synapse:List[str] = ["weight"]
             self.reproduction_function = self.__reproduction_snn if self.is_sbx == False else self.__reproduction_sbx
         elif self.network_type == "ANN":
-            self.parameters_name_neuron:List[str] = ["bias"]
-            self.parameters_name_synapse:List[str] = ["weight"]
+            # self.parameters_name_neuron:List[str] = ["bias"]
+            # self.parameters_name_synapse:List[str] = ["weight"]
             self.reproduction_function = self.__reproduction_ann if self.is_sbx == False else self.__reproduction_sbx
         else:
             raise Exception("Reproduction_NN: network_type not recognized", self.network_type, "should be SNN or ANN")
@@ -454,6 +454,39 @@ class Reproduction_NN(Reproduction):
             new_population[new_genome.id] = new_genome
         return new_population
 
+
+
+    @staticmethod
+    @nb.njit(cache=True, fastmath=True, nogil=True)
+    def crossover_nn_neuron(
+            parameters_1:np.ndarray, parameters_2:np.ndarray, new_parameters:np.ndarray, prob:float,
+            neurons_states_new:np.ndarray, common_neurons_indexes:np.ndarray, prob_neurons_states:float,
+    ):
+        # 1 - Crososver topology and get topology neurons/synapses indexes
+        random_indexes:np.ndarray = (np.random.uniform(0, 1, common_neurons_indexes.shape[0]) < prob_neurons_states).astype(np.int32)
+        neurons_states_new[common_neurons_indexes[random_indexes == 1]] = True
+        new_neurons_indexes:np.ndarray = np.where(neurons_states_new)[0]
+
+        for i in range(new_neurons_indexes.shape[0]):
+            if np.random.random() < prob: new_parameters[new_neurons_indexes[i]] = parameters_1[new_neurons_indexes[i]]
+            else: new_parameters[new_neurons_indexes[i]] = parameters_2[new_neurons_indexes[i]]
+
+
+    @staticmethod
+    @nb.njit(cache=True, fastmath=True, nogil=True)
+    def crossover_nn_synapse(
+            parameters_1:np.ndarray, parameters_2:np.ndarray, new_parameters:np.ndarray, prob:float,
+            neurons_states_new:np.ndarray, synapses_states_new:np.ndarray, common_synapses_indexes:np.ndarray, prob_synapses_states:float,
+    ):
+        new_neurons_indexes:np.ndarray = np.where(neurons_states_new)[0]
+        new_neurons_indexes_set:set = set(new_neurons_indexes)
+        for i in range(common_synapses_indexes.shape[1]):
+            x:float = common_synapses_indexes[0, i]
+            y:float = common_synapses_indexes[1, i]
+            if (x in new_neurons_indexes_set or y in new_neurons_indexes_set) and np.random.random() < prob_synapses_states:
+                synapses_states_new[x, y] = True
+                if np.random.random() < prob: new_parameters[x, y] = parameters_1[x, y]
+                else: new_parameters[x, y] = parameters_2[x, y]
 
     @staticmethod
     @nb.njit(cache=True, fastmath=True, nogil=True)

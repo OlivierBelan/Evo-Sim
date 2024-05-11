@@ -15,6 +15,11 @@ class Record():
         self.criterias:List[str] = self.config["Record"]["criteria"].split(" ")
         self.sorted_by:str = self.config["Record"]["sorted_by"]
         self.best_genome:Genome_NN = None
+        self.is_record_from_algo:bool = False
+        if "record_from_algo" in self.config["Record"]:
+            self.record_from_algo:bool = True if self.config["Record"]["record_from_algo"] == "True" else False
+        else:
+            self.record_from_algo:bool = False
 
         # 1 - Build folder
         self.__build_folder(self.folder_name, 0)

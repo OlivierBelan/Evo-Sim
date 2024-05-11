@@ -19,7 +19,6 @@ class Mutation():
 
         # Mutation probabilities
         self.prob_mutation:float = float(self.config_mutation["Mutation"]["prob_mutation"])
-        self.prob_dominance_reproduction:float = float(self.config_mutation["Mutation"]["prob_dominance_reproduction"])
 
         # Topology mutations
         self.single_structural_mutation:bool = True if self.config_mutation["Mutation"]["single_structural_mutation"] == "True" else False
@@ -39,10 +38,6 @@ class Mutation():
         # Parameters mutations
         self.prob_mutate_neuron_params:float = float(self.config_mutation["Mutation"]["prob_mutate_neuron_params"])
         self.prob_mutate_synapse_params:float = float(self.config_mutation["Mutation"]["prob_mutate_synapse_params"])
-
-        # Dominance
-        self.prob_dominance_neuron:float = float(self.config_mutation["Mutation"]["prob_dominance_neuron"])
-        self.prob_dominance_synapse:float = float(self.config_mutation["Mutation"]["prob_dominance_synapse"])
     
 
 class Mutation_Attributes():

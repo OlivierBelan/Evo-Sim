@@ -5,8 +5,7 @@ from problem.RL.ENVIRONNEMENT import Environment
 from problem.RL.GYM_ENV import Environment_Gym
 from typing import List, Dict, Any, Tuple
 from RL_problems_config.Config_Problem import Config_Problem
-# import gym
-import gymnasium as gym
+import gym
 
 import numpy as np
 import numba as nb
@@ -24,7 +23,7 @@ class QDHalfCheetah(Config_Problem):
         self.gym_env = gym.make("QDHalfCheetahBulletEnv-v0", render=render)
         # self.gym_env = gym.make("QDHalfCheetahBulletEnv-v0")
         self.env_count += 1
-        print(self.env_count,"- New Env", self.gym_env)
+        # print(self.env_count,"- New Env", self.gym_env)
         return Environment_Gym(
             self.name,
             self.gym_env,

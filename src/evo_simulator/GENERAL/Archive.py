@@ -39,48 +39,48 @@ class Niche():
         self.improve_counter += 1
 
 class Archive:
-    def __init__(self, name:str, algorithm_name:str, config_path_file:str, genome_builder_function:Callable, nb_generation:int, reproduction_size:int, folder_path:str="") -> None:
+    def __init__(self, config_section_name:str, config_path_file:str, genome_builder_function:Callable) -> None:
 
-        # 0 - Confif parameters
+        # 0 - Config parameters
         self.config_path_file:str = config_path_file
-        self.config:Dict[str, Dict[str, Any]] = TOOLS.config_function(config_path_file, [name, "NEURO_EVOLUTION"])
-        self.description_name:str = self.config[name]["description_name"] # name of the description
-        self.update_criteria:str = self.config[name]["update_criteria"] # fitness, novelty, competitions
-        self.name:str = name + "_" + algorithm_name + "_" + self.description_name
         self.genome_builder_function:Callable = genome_builder_function
-        self.optimization_type:str = self.config["NEURO_EVOLUTION"]["optimization_type"] # maximize, minimize, closest_to_zero
-        self.nb_generations:int = nb_generation
-        self.folder_path:str = folder_path
+        self.config:Dict[str, Dict[str, Any]] = TOOLS.config_function(config_path_file, [config_section_name, "NEURO_EVOLUTION"])
+        self.folder_path:str = self.config[config_section_name]["folder_path"]
         if self.folder_path != "" and self.folder_path[-1] != "/": self.folder_path += "/"
+
 
         # 1 - Archive parameters
         self.niches_info:Dict[Any, Niche] = {} # key: centroid, value: niche
         self.archive_genomes:Dict[Any, Genome] = {} # key: centroid, value: genome
-        self.archive_dimensions:int = int(self.config[name]["archive_dimensions"]) # dimension of the description space
-        self.best_population:Population = Population(get_new_population_id(), self.config_path_file)
+        self.description_name:str = self.config[config_section_name]["description_name"] # name of the description
+        self.update_criteria:str = self.config[config_section_name]["update_criteria"] # fitness, novelty, competitions
+        self.optimization_type:str = self.config[config_section_name]["optimization_type"] # maximize, minimize, closest_to_zero
+        self.archive_dimensions:int = int(self.config[config_section_name]["dimensions"]) # dimension of the description space
+        self.name:str = self.config["NEURO_EVOLUTION"]["algo_name"] + "_" + config_section_name + "_" + self.description_name
+
 
         # 2 - CVT parameters
-        self.niches_nb:int = int(self.config[name]["niches_nb"]) # number of niches
-        self.cvt_samples:int = int(self.config[name]["cvt_samples"]) # # more of this -> higher-quality CVT (for the KMeans algorithm)
-        self.cvt_use_cache:bool = True if self.config[name]["cvt_use_cache"] == "True" else False # do we cache the result of CVT and reuse?
+        self.niches_nb:int = int(self.config[config_section_name]["niches_nb"]) # number of niches
+        self.cvt_samples:int = int(self.config[config_section_name]["cvt_samples"]) # # more of this -> higher-quality CVT (for the KMeans algorithm)
+        self.cvt_use_cache:bool = True if self.config[config_section_name]["cvt_use_cache"] == "True" else False # do we cache the result of CVT and reuse?
         
-        # 3 - Utility parameters
-        self.reproduction_batch_size:int = reproduction_size # parent batch size (for reproduction)
-        self.start_using_archive_size:int = np.floor(self.niches_nb * float(self.config[name]["start_using_archive_ratio"])).astype(np.int32) # proportion of niches to be filled before starting
-        self.checkpoint_period_ratio:float = float(self.config[name]["checkpoint_period_ratio"]) # proportion of generations before saving the archive
-        self.checkpoint_period:int = np.floor(self.nb_generations * self.checkpoint_period_ratio).astype(int) # when to write results (one generation = one batch)
-        self.checkpoint_remaining:int = int(1/self.checkpoint_period_ratio) # remaining checkpoint before saving the archive
-        self.checkpoint_total:int = self.checkpoint_remaining # total checkpoint before saving the archive
+        # 3 - Utilities parameters
+        self.best_population:Population = Population(get_new_population_id(), self.config_path_file)
+        self.best_population_size:int = int(self.config[config_section_name]["best_population_size"])
+
+        self.generation:int = 0
+        self.checkpoint_period:int = int(self.config[config_section_name]["checkpoint_period"]) # number of generations before saving the archive
+        self.checkpoint_counter:int = 0
         self.improvement_archives:int = 0 # number of times the archives have been improved
 
-        self.niches_status:np.ndarray = np.zeros(self.niches_nb, dtype=np.float32) # 0: empty, 1: filled
+        # 4 - Niches parameters
+        self.niches_status:np.ndarray = np.zeros(self.niches_nb, dtype=np.int32) # 0: empty, 1: filled
         self.fitness_niches:np.ndarray = np.zeros(self.niches_nb, dtype=np.float32) # fitness of the niches
         self.description_niches:np.ndarray = np.zeros((self.niches_nb, self.archive_dimensions), dtype=np.float32) # description of the niches
         self.centroid_niches:np.ndarray = np.zeros((self.niches_nb, self.archive_dimensions), dtype=np.float32) # description of the niches
 
-        # 4 - Build the CVT
+        # 5 - Build the CVT (niches)
         self.kdt:KDTree = self.__init_cvt(self.niches_nb, self.archive_dimensions, self.cvt_samples, self.cvt_use_cache) # made for fast nearest-neighbor queries (find the closest niche to a given individual)
-        self.generation:int = 0
         self.checkpoint_period_counter:int = 0
         self.check_point_time:float = time.time()
 
@@ -97,29 +97,23 @@ class Archive:
                 print("WARNING: using cached CVT:", fname)
                 return np.loadtxt(fname)
         # otherwise, compute cvt
-        print("Build CVT map (this can take a while...):", fname)
+        print("Build CVT map...:", fname)
 
         # 2 - Create the CVT with KMeans algorithm
         random_distributed_data_points:np.ndarray = np.random.rand(cvt_samples, map_dim) # more samples -> better CVT: random points uniformly distributed in the description space
-        k_means:KMeans = KMeans(init='k-means++', n_clusters=niches_nb, n_init=1, verbose=1)#,algorithm="full") # Build the k-means object
+        k_means:KMeans = KMeans(init='k-means++', n_clusters=niches_nb, n_init=1, verbose=0)#,algorithm="full") # Build the k-means object
         k_means.fit(random_distributed_data_points) # Create the 'niches_nb' CVT
         self.__write_centroids(k_means.cluster_centers_) # save the CVT - cluster centers is the CVT (centroids)
 
         return KDTree(k_means.cluster_centers_, leaf_size=30, metric='euclidean') # made for fast nearest-neighbor queries (find the closest niche to a given individual)
-
-    def __save_archive_genome(self):
-        # 1 - Dump the genomes in the archive files
-        for centroid, genome in self.archive_genomes.items():
-            file_name:str = self.__path_archive_genomes + 'genome_' + str(centroid) + '.pkl'
-            with open(file_name, 'wb') as file:
-                pickle.dump(genome, file)
-        # 2 - Reset the archive genomes for the next batch and memory management
-        self.archive_genomes:Dict[Any, Genome] = {}
-    
-    def __load_archive_genome(self) -> Population:
+  
+    def get_random_genome_from_archive(self, size:int) -> Population:
         population:Population = Population(get_new_population_id(), self.config_path_file)
         population_dict:Dict[int, Genome] = population.population
-        centroid_list:List[Any] = random.sample(list(self.niches_info.keys()), self.reproduction_batch_size)
+        niches_keys:List = list(self.niches_info.keys())
+        if len(niches_keys) < size: raise Exception("ERROR: not enough niches in the archive")
+        centroid_list:List[Any] = random.sample(niches_keys, size)
+
         # 1 - Load the genomes
         for centroid in centroid_list:
             # 1.1 Check if the centroid is in the archive
@@ -132,6 +126,27 @@ class Archive:
                 population_dict[genome.id] = genome
         return population
 
+    def get_new_random_genome_not_from_archive(self, size:int) -> Population:
+        population:Population = Population(get_new_population_id(), self.config_path_file)
+        population_dict:Dict[int, Genome] = population.population
+        while len(population_dict) < size:
+            new_genome:Genome = self.genome_builder_function()
+            population_dict[new_genome.id] = new_genome
+        return population
+
+    def get_archive_filled_ratio(self) -> float:
+        return len(self.niches_info) / self.niches_nb
+
+    def get_archive_filled_nb(self) -> int:
+        return len(self.niches_info)
+
+    def get_best_population(self) -> Population:
+        return self.best_population
+
+    def get_niches_info(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+        active_niches_indexes:np.ndarray = np.where(self.niches_status == 1)[0]
+        return self.fitness_niches[active_niches_indexes], self.description_niches[active_niches_indexes], self.centroid_niches[active_niches_indexes]
+
     def load_genome_from_archive(self, centroid:Any) -> Genome:
         # 0 - Check if the centroid is in the archive
         if self.niches_info.get(centroid) == None: raise Exception("ERROR: centroid not found in archive")
@@ -141,26 +156,6 @@ class Archive:
         with open(file_name, 'rb') as file:
             genome:Genome = pickle.load(file)
         return genome
-
-    def __build_random_genome(self) -> Population:
-        population:Population = Population(get_new_population_id(), self.config_path_file)
-        population_dict:Dict[int, Genome] = population.population
-        while len(population_dict) < self.reproduction_batch_size:
-            new_genome:Genome = self.genome_builder_function()
-            population_dict[new_genome.id] = new_genome
-        return population
-
-    def get_random_archive_genome(self) -> Population:
-        if len(self.niches_info) < self.start_using_archive_size:
-            return self.__build_random_genome()
-        return self.__load_archive_genome()
-
-    def get_best_population(self) -> Population:
-        return self.best_population
-
-    def get_niches_info(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
-        active_niches_indexes:np.ndarray = np.where(self.niches_status == 1)[0]
-        return self.fitness_niches[active_niches_indexes], self.description_niches[active_niches_indexes], self.centroid_niches[active_niches_indexes]
 
     def __update_niches_status(self, index:int, fitness:float, description:np.ndarray, centroid:np.ndarray):
         # 1 - Update the niche status
@@ -175,22 +170,23 @@ class Archive:
         # 4 - Update the centroid of the niche
         self.centroid_niches[index] = centroid
 
-
     def update(self, population:Population, update_criteria:str=None):
         population_dict:Dict[int, Genome] = population.population
         first_genome:Genome = population_dict[next(iter(population_dict))]
+        self.archive_genomes:Dict[Any, Genome] = {}
+
+        # 0 - Check if the genome is well-formed
         if update_criteria != None: self.update_criteria = update_criteria
         if self.update_criteria != "fitness":
             if self.update_criteria not in first_genome.info: raise Exception("Reproduction: criteria ("+self.update_criteria+") does not exist in the genome info")
             if type(first_genome.info[self.update_criteria]) != float: raise Exception("Reproduction: criteria must be a float")
-        self.archive_genomes:Dict[Any, Genome] = {}
-        # print("len population_dict", len(population_dict))
-        for genome in population_dict.values():
-            if genome.info[self.description_name] is None: raise Exception("ERROR: genome description name:" + self.description_name + " does not exist")
-            if len(genome.info[self.description_name]) != self.archive_dimensions: raise Exception("ERROR: genome description dimension is not equal to the archive dimension got", len(genome.info[self.description_name]),"expected", self.archive_dimensions)
-            if np.all((genome.info[self.description_name] >= 0) & (genome.info[self.description_name] <= 1)) == False: raise Exception("ERROR: genome description is not in [0, 1]")
+        if first_genome.info[self.description_name] is None: raise Exception("ERROR: genome description name:" + self.description_name + " does not exist")
+        if len(first_genome.info[self.description_name]) != self.archive_dimensions: raise Exception("ERROR: genome description dimension is not equal to the archive dimension got", len(first_genome.info[self.description_name]),"expected", self.archive_dimensions)
+        if np.all((first_genome.info[self.description_name] >= 0) & (first_genome.info[self.description_name] <= 1)) == False: raise Exception("ERROR: genome description is not in [0, 1] interval")
 
-            # 1 - Query the archive for the centroid of the new genome
+        for genome in population_dict.values():
+
+            # 1 - Get the niche based on the description (centroid)
             niche_index = self.kdt.query([genome.info[self.description_name]], k=1)[1][0][0]
             centroid:np.ndarray = self.kdt.data[niche_index]
             niche = self.make_hashable(centroid)
@@ -199,7 +195,7 @@ class Archive:
             criteria_score:float = genome.fitness.score if self.update_criteria == "fitness" else genome.info[self.update_criteria]
             if niche in self.niches_info:
                 self.niches_info[niche].try_to_update_counter += 1
-                # if criteria_score > self.niches_info[niche].fitness:
+
                 if self.criteria_condition(criteria_score, self.niches_info[niche].fitness) == True: # maximize, minimize, closest_to_zero
                     self.improvement_archives += 1
                     genome.info["centroid"] = niche
@@ -218,10 +214,16 @@ class Archive:
 
         self.__update_best_population(population)
         self.__save_archive_genome()
-        self.generation += 1
-        # print("generation:", self.generation)
         self.__checkpoint_save_archive()
-        # print("generation:", self.generation, "improvement:", self.improvement_archives, "in:", round(time.time() - start_time, 3), "seconds")
+
+    def __save_archive_genome(self):
+        # 1 - Dump the genomes in the archive files
+        for centroid, genome in self.archive_genomes.items():
+            file_name:str = self.__path_archive_genomes + 'genome_' + str(centroid) + '.pkl'
+            with open(file_name, 'wb') as file:
+                pickle.dump(genome, file)
+        # 2 - Reset the archive genomes for the next batch and memory management
+        self.archive_genomes:Dict[Any, Genome] = {}
 
     def criteria_condition(self, criteria_score:float, niche_fitness:float) -> bool:
         if self.optimization_type == "maximize":
@@ -230,9 +232,11 @@ class Archive:
             return criteria_score < niche_fitness
         elif self.optimization_type == "closest_to_zero":
             return abs(criteria_score) < abs(niche_fitness)
+        else:
+            raise Exception("ERROR: optimization '" + self.optimization_type +"' type not recognized")
 
 
-    def __update_best_population(self, population:Population, pop_size:int=10):
+    def __update_best_population(self, population:Population):
         best_population_dict:Dict[int, Genome] = self.best_population.population
         current_population_dict:Dict[int, Genome] = population.population
 
@@ -249,28 +253,28 @@ class Archive:
 
         # 3 - Keep the pop_size best genomes
         best_population_dict:Dict[int, Genome] = {}
-        for i in range(pop_size):
+        for i in range(self.best_population_size):
             best_population_dict[all_genomes_list[i].id] = all_genomes_list[i]
         self.best_population.population = best_population_dict
 
     def __checkpoint_save_archive(self):
         self.checkpoint_period_counter += 1
-        # 1 - Check if we need to save the archive
-        if self.generation < self.nb_generations and self.checkpoint_period_counter < self.checkpoint_period: 
-            self.best_population.update_info()
-            print(self.name+": Generation:", self.generation, "Archive filled:", len(self.niches_info), "/", self.niches_nb, "(" +str(len(self.niches_info) / self.niches_nb) + "%); ", "improvement: +" + str(self.improvement_archives) +";", "best fitness:", round(self.best_population.fitness.score, 3), end=";\n")
-            self.improvement_archives:int = 0
-            return
-
-        # 2 - Print the current state of the archive
         self.best_population.update_info()
+        # 1 - Check if we need to save the archive
+        if self.checkpoint_period_counter < self.checkpoint_period: 
+            print(self.name+": Generation:", self.generation, "Archive filled:", len(self.niches_info), "/", self.niches_nb, "(" + str(round(len(self.niches_info) / self.niches_nb, 3)) + "%); ", "improvement: +" + str(self.improvement_archives) +";", "best fitness:", round(self.best_population.fitness.score, 3), end=";\n")
+            self.improvement_archives:int = 0
+            self.generation += 1
+            return
+        # 2 - Print the current state of the archive
         self.checkpoint_period_counter:int = 0
-        print(self.name+": Generation:", self.generation, "Archive filled:", len(self.niches_info), "/", self.niches_nb, "(" +str(len(self.niches_info) / self.niches_nb) + "%); ", "improvement: +" + str(self.improvement_archives) +";", "best fitness:", round(self.best_population.fitness.score, 3), end="; ")
-        print("Build check point:", str(self.checkpoint_total - self.checkpoint_remaining +1) +"/"+ str(self.checkpoint_total), "-->", round(time.time() - self.check_point_time, 3), "s", end="; ")
-        self.checkpoint_remaining -= 1
-        print("Estimated time left:", round(self.checkpoint_remaining * (time.time() - self.check_point_time), 3), "s")
-        self.check_point_time:float = time.time()
+        print(self.name+": Generation:", self.generation, "Archive filled:", len(self.niches_info), "/", self.niches_nb, "(" + str(round(len(self.niches_info) / self.niches_nb, 3)) + "%); ", "improvement: +" + str(self.improvement_archives) +";", "best fitness:", round(self.best_population.fitness.score, 3), end="; ")
+        print("Build New check point:", self.checkpoint_counter)
+        self.checkpoint_counter += 1
         self.improvement_archives:int = 0
+        # print("Build check point:", str(self.checkpoint_total - self.checkpoint_remaining +1) +"/"+ str(self.checkpoint_total), "-->", round(time.time() - self.check_point_time, 3), "s", end="; ")
+        # print("Estimated time left:", round(self.checkpoint_remaining * (time.time() - self.check_point_time), 3), "s")
+        # self.check_point_time:float = time.time()
 
         # 3 - Save the archive (write the archive in a file) -> format: fitness, centroid, descriptions, try_to_update_counter, improve_counter
         filename:str = self.__path_archive_checkpoint + 'archive_' + str(self.generation) + '.dat'
@@ -287,15 +291,11 @@ class Archive:
                 f.write("\n")
         # active_niches_indexes:np.ndarray = np.where(self.niches_status == 1)[0]
         # print("fitness_max", self.fitness_niches[active_niches_indexes].max(), "fitness_min", self.fitness_niches[active_niches_indexes].min(), "fitness_mean", self.fitness_niches[active_niches_indexes].mean())
-
+        self.generation += 1
+    
     def get_centroid_from_description(self, description:np.ndarray) -> Any:
         return self.make_hashable(self.kdt.data[self.kdt.query([description], k=1)[1][0][0]])
 
-    def __load_genome_from_file(self, centroid:Any) -> Genome:
-        # 1.2 Load the genome
-        file_name:str = self.__path_archive_genomes + 'genome_' + str(centroid) + '.pkl'
-        with open(file_name, 'rb') as file:
-            return pickle.load(file)
 
     def __write_centroids(self, centroids:np.ndarray):
         niche_nb:int = centroids.shape[0]
@@ -319,10 +319,29 @@ class Archive:
         return self.__path_archive + 'centroids_' + str(n_niches) + '_' + str(map_dim) + '.dat'
 
     def __build_folder(self):
-        if os.path.exists("./"+ self.folder_path + self.name+"_archives/") == False: os.mkdir(""+ self.folder_path + self.name+"_archives")
-        if os.path.exists("./"+ self.folder_path + self.name+"_archives/checkpoint") == False: os.mkdir("./"+ self.folder_path + self.name+"_archives/checkpoint")
-        if os.path.exists("./"+ self.folder_path + self.name+"_archives/archives_genomes") == False: os.mkdir("./"+ self.folder_path + self.name+"_archives/archives_genomes")
+        if os.path.exists("./"+ self.folder_path) == False: os.mkdir(""+ self.folder_path)
+        self.name:str = self.__init_file(self.folder_path, self.name)
+        if os.path.exists("./"+ self.folder_path + self.name) == False: os.mkdir(""+ self.folder_path + self.name)
+        if os.path.exists("./"+ self.folder_path + self.name+"/checkpoint") == False: os.mkdir("./"+ self.folder_path + self.name+"/checkpoint")
+        if os.path.exists("./"+ self.folder_path + self.name+"/archives_genomes") == False: os.mkdir("./"+ self.folder_path + self.name+"/archives_genomes")
 
-        self.__path_archive:str = "./"+ self.folder_path + self.name+"_archives/"
-        self.__path_archive_checkpoint:str = "./"+ self.folder_path + self.name+"_archives/checkpoint/"
-        self.__path_archive_genomes:str = "./"+ self.folder_path + self.name+"_archives/archives_genomes/"
+        self.__path_archive:str = "./"+ self.folder_path + self.name+"/"
+        self.__path_archive_checkpoint:str = "./"+ self.folder_path + self.name+"/checkpoint/"
+        self.__path_archive_genomes:str = "./"+ self.folder_path + self.name+"/archives_genomes/"
+
+
+    def __init_file(self, config_path, file_name:str) -> str:
+        if os.path.exists(config_path + file_name):
+            i = 1
+            while os.path.exists(config_path + file_name + "_" + str(i)):
+                i += 1
+            # return file_name + "_" + str(i) + "_" + time.strftime("%d-%m-%Y_%H-%M-%S")
+            return file_name + "_" + str(i)
+        else:
+            return file_name
+
+    def __load_genome_from_file(self, centroid:Any) -> Genome:
+        # 1.2 Load the genome
+        file_name:str = self.__path_archive_genomes + 'genome_' + str(centroid) + '.pkl'
+        with open(file_name, 'rb') as file:
+            return pickle.load(file)
