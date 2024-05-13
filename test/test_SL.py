@@ -198,7 +198,7 @@ def neuro_evo_func(args:List[str]):
     nb_generation:int = 50
 
     # 3 - Train
-    neuro_evo:Neuro_Evolution = Neuro_Evolution(nb_generations=nb_generation, nb_runs=nb_runs, is_record=True, config_path=config_path, cpu=1)
+    neuro_evo:Neuro_Evolution = Neuro_Evolution(nb_generations=nb_generation, nb_runs=nb_runs, is_record=True, config_path=config_path, cpu=20)
     neuro_evo.init_algorithm(name, algorithm, config_path)
     neuro_evo.init_problem_SL(Supervised_Manager, config_path, problem_name, features, labels)
     neuro_evo.run()
