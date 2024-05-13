@@ -162,10 +162,7 @@ class MAP_ELITE(Algorithm):
         # 7 - Get best genome from the archive (10 best)
         self.population_manager = self.archive.get_best_population()
 
-        # 8 - Print stats
-        self.__print_stats()
-
-        # 9 - Update population
+        # 8 - Update population
         global_population.population = self.population_manager.population
 
         return global_population
@@ -192,30 +189,3 @@ class MAP_ELITE(Algorithm):
     def __mutation_rastrigin(self, population:Population) -> None:
         self.__mutation_classic(population)
     # END test rastrigin
-
-    def __get_info_stats_population(self):
-        stats:List[List[int, float, float, int]] = []
-        # self.population_manager.update_info()
-        best_fitness:float = self.population_best.fitness.score
-        mean_fitness:float = self.population_best.fitness.mean
-        stagnation:float = self.population_best.stagnation
-        best_genome:Genome_NN = self.population_best.best_genome
-        nb_parameters:int = len(best_genome.nn.parameters)
-        # nb_neurons:int = len(best_genome.nn.hiddens["neurons_indexes_active"])
-        # nb_synapses:int = best_genome.nn.synapses_actives_indexes[0].size
-        stats.append([0, len(self.population_best.population), (best_genome.id, round(best_fitness, 3), nb_parameters), round(mean_fitness, 3), stagnation])
-        return stats
-
-
-    def __print_stats(self):
-        if self.verbose == False: return
-        self.population_best.update_info()
-        # self.__get_info_distance()
-        print("--------------------------------------------------------------------------------------------------------------------->>> " +self.name)
-        titles = [[self.name, "Size", "Best(id, fit, neur, syn)", "Avg", "Stagnation"]]
-        titles.extend(self.__get_info_stats_population())
-        col_width = max(len(str(word)) for row in titles for word in row) + 2  # padding
-        for row in titles:
-            print("".join(str(word).ljust(col_width) for word in row))
-        print("\n")
-    

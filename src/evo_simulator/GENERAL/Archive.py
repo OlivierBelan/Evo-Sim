@@ -1,6 +1,6 @@
 from evo_simulator.GENERAL.Population import Population
 from evo_simulator.GENERAL.Genome import Genome
-from evo_simulator.GENERAL.Index_Manager import get_new_population_id, get_new_niche_status_index
+from evo_simulator.GENERAL.Index_Manager import get_new_population_id, get_new_niche_status_index, reset_niche_status_index
 from typing import Any, Dict, List, Tuple, Callable, Set
 import numpy as np
 from pathlib import Path
@@ -47,6 +47,7 @@ class Archive:
         self.config:Dict[str, Dict[str, Any]] = TOOLS.config_function(config_path_file, [config_section_name, "NEURO_EVOLUTION"])
         self.folder_path:str = self.config[config_section_name]["folder_path"]
         if self.folder_path != "" and self.folder_path[-1] != "/": self.folder_path += "/"
+        reset_niche_status_index()
 
 
         # 1 - Archive parameters
