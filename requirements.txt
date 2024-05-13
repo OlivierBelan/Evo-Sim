@@ -97,3 +97,4 @@ urllib3==2.2.1
 virtualenv==20.26.1
 wrapt==1.16.0
 yarl==1.9.4
+pybullet==3.2.6
