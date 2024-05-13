@@ -176,8 +176,6 @@ def neuro_evo_func(args:List[str]):
         "OpenES":         openES_func("OpenES", "OpenES_CONFIG_SL.cfg"),
 
         # "HyperNEAT":      neat_func("HyperNEAT_CONFIG_SL.cfg"),
-        # "MAP_ELITE":      map_elite("MAP_ELITE_CONFIG_SL.cfg"),
-        # "NSLC":           nslc("NSLC_CONFIG_SL.cfg"),
         # "ES-HyperNEAT":   neat_func("ES_HyperNEAT_CONFIG_SL.cfg"), # Coming soon
 
         "DE-evosax":      evosax_func("DE-evosax","DE-evosax_CONFIG_SL.cfg"),
@@ -196,8 +194,8 @@ def neuro_evo_func(args:List[str]):
     print("\nLEN DATA SET = ", problem_name, "size", len(features), "LEN input = ", len(features[0]), "labels= ", np.unique(labels), "\n")
 
     
-    nb_runs:int = 1
-    nb_generation:int = 200
+    nb_runs:int = 3
+    nb_generation:int = 50
 
     # 3 - Train
     neuro_evo:Neuro_Evolution = Neuro_Evolution(nb_generations=nb_generation, nb_runs=nb_runs, is_record=True, config_path=config_path, cpu=1)

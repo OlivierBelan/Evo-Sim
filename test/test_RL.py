@@ -139,7 +139,8 @@ def neuro_evo_matrix_func(args:List[str]):
         "CMA_ES":         cma_es_func("CMA_ES_CONFIG_RL.cfg"),
         "NES":            nes_func("NES","NES_CONFIG_RL.cfg"),
         "OpenES":         openES_func("OpenES", "OpenES_CONFIG_RL.cfg"),
-        # "HyperNEAT":      hyperneat_func("HyperNEAT_CONFIG_RL.cfg"), # "HyperNEAT_CONFIG_RL.cfg
+        # "HyperNEAT":      hyperneat_func("HyperNEAT_CONFIG_RL.cfg"), # Comming soon
+        # "ES-HyperNEAT":   es_hyperneat_func("ES-HyperNEAT_CONFIG_RL.cfg"), # Comming soon
 
         # 1.2 - Algorithms Multi-Objective
         "MAP_ELITE":      map_elite("MAP_ELITE_CONFIG_RL.cfg"),
@@ -195,7 +196,7 @@ def neuro_evo_matrix_func(args:List[str]):
         # environnement:QDHumanoid = QDHumanoid("QDHumanoid", config_path, nb_input=44, nb_output=17, obs_max_init_value=5, obs_min_init_value=-5, auto_obersvation=True)
 
         # 3 - Reinforcement Manager -> Run
-        neuro:Neuro_Evolution = Neuro_Evolution(nb_generations=nb_generation, nb_runs=nb_runs, is_record=True, is_Archive=False, config_path=config_path, cpu=1)
+        neuro:Neuro_Evolution = Neuro_Evolution(nb_generations=nb_generation, nb_runs=nb_runs, is_record=True, is_Archive=False, config_path=config_path, cpu=20)
         neuro.init_algorithm(name, algorithm, config_path)
         neuro.init_problem_RL(Reinforcement_Manager, config_path, environnement, nb_episode=nb_episode, seeds=seeds, render=False)
         neuro.run()
