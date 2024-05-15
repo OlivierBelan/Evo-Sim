@@ -3218,9 +3218,6 @@ static CYTHON_INLINE double __Pyx_double_from_UCS4(Py_UCS4 uchar);
 #define __Pyx_PyMethod_New2Arg(func, self) PyMethod_New(func, self, (PyObject*)Py_TYPE(self))
 #endif
 
-/* PyObjectCallNoArg.proto */
-static CYTHON_INLINE PyObject* __Pyx_PyObject_CallNoArg(PyObject *func);
-
 /* SliceObject.proto */
 #define __Pyx_PyObject_DelSlice(obj, cstart, cstop, py_start, py_stop, py_slice, has_cstart, has_cstop, wraparound)\
     __Pyx_PyObject_SetSlice(obj, (PyObject*)NULL, cstart, cstop, py_start, py_stop, py_slice, has_cstart, has_cstop, wraparound)
@@ -3295,6 +3292,9 @@ static PyObject* __Pyx_PyObject_GenericGetAttr(PyObject* obj, PyObject* attr_nam
 #else
 #define __Pyx_PyObject_GenericGetAttr PyObject_GenericGetAttr
 #endif
+
+/* PyObjectCallNoArg.proto */
+static CYTHON_INLINE PyObject* __Pyx_PyObject_CallNoArg(PyObject *func);
 
 /* PyObjectGetMethod.proto */
 static int __Pyx_PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method);
@@ -3792,7 +3792,6 @@ static PyObject *__pyx_builtin_range;
 static PyObject *__pyx_builtin_print;
 static PyObject *__pyx_builtin_format;
 static PyObject *__pyx_builtin_sorted;
-static PyObject *__pyx_builtin_exit;
 static PyObject *__pyx_builtin___import__;
 static PyObject *__pyx_builtin_ValueError;
 static PyObject *__pyx_builtin_MemoryError;
@@ -3846,7 +3845,6 @@ static const char __pyx_k_base[] = "base";
 static const char __pyx_k_ceil[] = "ceil";
 static const char __pyx_k_clip[] = "clip";
 static const char __pyx_k_dict[] = "__dict__";
-static const char __pyx_k_exit[] = "exit";
 static const char __pyx_k_init[] = "init";
 static const char __pyx_k_main[] = "__main__";
 static const char __pyx_k_mode[] = "mode";
@@ -3898,7 +3896,6 @@ static const char __pyx_k_hidden[] = "hidden";
 static const char __pyx_k_import[] = "__import__";
 static const char __pyx_k_interp[] = "interp";
 static const char __pyx_k_name_2[] = "__name__";
-static const char __pyx_k_nb_one[] = "nb_one";
 static const char __pyx_k_normal[] = "normal";
 static const char __pyx_k_online[] = "online";
 static const char __pyx_k_output[] = "output";
@@ -4030,7 +4027,6 @@ static const char __pyx_k_MemoryView_of_r_object[] = "<MemoryView of %r object>"
 static const char __pyx_k_Runner_RL_cython_split[] = "Runner_RL_cython.split";
 static const char __pyx_k_record_decoding_method[] = "record_decoding_method";
 static const char __pyx_k_MemoryView_of_r_at_0x_x[] = "<MemoryView of %r at 0x%x>";
-static const char __pyx_k_combinatorial_encoder_2[] = "combinatorial_encoder\n";
 static const char __pyx_k_contiguous_and_indirect[] = "<contiguous and indirect>";
 static const char __pyx_k_disable_output_threshold[] = "disable_output_threshold";
 static const char __pyx_k_Dimension_d_is_not_direct[] = "Dimension %d is not direct";
@@ -4525,7 +4521,6 @@ typedef struct {
   PyObject *__pyx_n_u_combinatorial;
   PyObject *__pyx_n_s_combinatorial_combinaison_noise;
   PyObject *__pyx_n_s_combinatorial_encoder;
-  PyObject *__pyx_n_u_combinatorial_encoder_2;
   PyObject *__pyx_n_s_combinatorial_factor;
   PyObject *__pyx_n_s_combinatorial_roll;
   PyObject *__pyx_n_s_concatenate;
@@ -4553,7 +4548,6 @@ typedef struct {
   PyObject *__pyx_n_s_error;
   PyObject *__pyx_n_u_exact;
   PyObject *__pyx_n_s_exact_encoder;
-  PyObject *__pyx_n_s_exit;
   PyObject *__pyx_n_u_first_index;
   PyObject *__pyx_n_s_flags;
   PyObject *__pyx_n_s_float32;
@@ -4604,7 +4598,6 @@ typedef struct {
   PyObject *__pyx_n_s_name;
   PyObject *__pyx_n_s_name_2;
   PyObject *__pyx_n_s_nb_episode;
-  PyObject *__pyx_n_u_nb_one;
   PyObject *__pyx_n_s_ndim;
   PyObject *__pyx_n_s_networks_list;
   PyObject *__pyx_n_s_neuron_reset;
@@ -4670,7 +4663,6 @@ typedef struct {
   PyObject *__pyx_n_s_setstate;
   PyObject *__pyx_n_s_setstate_cython;
   PyObject *__pyx_n_s_shape;
-  PyObject *__pyx_n_u_shape;
   PyObject *__pyx_n_s_size;
   PyObject *__pyx_n_s_sorted;
   PyObject *__pyx_n_s_spec;
@@ -4959,7 +4951,6 @@ static int __pyx_m_clear(PyObject *m) {
   Py_CLEAR(clear_module_state->__pyx_n_u_combinatorial);
   Py_CLEAR(clear_module_state->__pyx_n_s_combinatorial_combinaison_noise);
   Py_CLEAR(clear_module_state->__pyx_n_s_combinatorial_encoder);
-  Py_CLEAR(clear_module_state->__pyx_n_u_combinatorial_encoder_2);
   Py_CLEAR(clear_module_state->__pyx_n_s_combinatorial_factor);
   Py_CLEAR(clear_module_state->__pyx_n_s_combinatorial_roll);
   Py_CLEAR(clear_module_state->__pyx_n_s_concatenate);
@@ -4987,7 +4978,6 @@ static int __pyx_m_clear(PyObject *m) {
   Py_CLEAR(clear_module_state->__pyx_n_s_error);
   Py_CLEAR(clear_module_state->__pyx_n_u_exact);
   Py_CLEAR(clear_module_state->__pyx_n_s_exact_encoder);
-  Py_CLEAR(clear_module_state->__pyx_n_s_exit);
   Py_CLEAR(clear_module_state->__pyx_n_u_first_index);
   Py_CLEAR(clear_module_state->__pyx_n_s_flags);
   Py_CLEAR(clear_module_state->__pyx_n_s_float32);
@@ -5038,7 +5028,6 @@ static int __pyx_m_clear(PyObject *m) {
   Py_CLEAR(clear_module_state->__pyx_n_s_name);
   Py_CLEAR(clear_module_state->__pyx_n_s_name_2);
   Py_CLEAR(clear_module_state->__pyx_n_s_nb_episode);
-  Py_CLEAR(clear_module_state->__pyx_n_u_nb_one);
   Py_CLEAR(clear_module_state->__pyx_n_s_ndim);
   Py_CLEAR(clear_module_state->__pyx_n_s_networks_list);
   Py_CLEAR(clear_module_state->__pyx_n_s_neuron_reset);
@@ -5104,7 +5093,6 @@ static int __pyx_m_clear(PyObject *m) {
   Py_CLEAR(clear_module_state->__pyx_n_s_setstate);
   Py_CLEAR(clear_module_state->__pyx_n_s_setstate_cython);
   Py_CLEAR(clear_module_state->__pyx_n_s_shape);
-  Py_CLEAR(clear_module_state->__pyx_n_u_shape);
   Py_CLEAR(clear_module_state->__pyx_n_s_size);
   Py_CLEAR(clear_module_state->__pyx_n_s_sorted);
   Py_CLEAR(clear_module_state->__pyx_n_s_spec);
@@ -5371,7 +5359,6 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
   Py_VISIT(traverse_module_state->__pyx_n_u_combinatorial);
   Py_VISIT(traverse_module_state->__pyx_n_s_combinatorial_combinaison_noise);
   Py_VISIT(traverse_module_state->__pyx_n_s_combinatorial_encoder);
-  Py_VISIT(traverse_module_state->__pyx_n_u_combinatorial_encoder_2);
   Py_VISIT(traverse_module_state->__pyx_n_s_combinatorial_factor);
   Py_VISIT(traverse_module_state->__pyx_n_s_combinatorial_roll);
   Py_VISIT(traverse_module_state->__pyx_n_s_concatenate);
@@ -5399,7 +5386,6 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
   Py_VISIT(traverse_module_state->__pyx_n_s_error);
   Py_VISIT(traverse_module_state->__pyx_n_u_exact);
   Py_VISIT(traverse_module_state->__pyx_n_s_exact_encoder);
-  Py_VISIT(traverse_module_state->__pyx_n_s_exit);
   Py_VISIT(traverse_module_state->__pyx_n_u_first_index);
   Py_VISIT(traverse_module_state->__pyx_n_s_flags);
   Py_VISIT(traverse_module_state->__pyx_n_s_float32);
@@ -5450,7 +5436,6 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
   Py_VISIT(traverse_module_state->__pyx_n_s_name);
   Py_VISIT(traverse_module_state->__pyx_n_s_name_2);
   Py_VISIT(traverse_module_state->__pyx_n_s_nb_episode);
-  Py_VISIT(traverse_module_state->__pyx_n_u_nb_one);
   Py_VISIT(traverse_module_state->__pyx_n_s_ndim);
   Py_VISIT(traverse_module_state->__pyx_n_s_networks_list);
   Py_VISIT(traverse_module_state->__pyx_n_s_neuron_reset);
@@ -5516,7 +5501,6 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
   Py_VISIT(traverse_module_state->__pyx_n_s_setstate);
   Py_VISIT(traverse_module_state->__pyx_n_s_setstate_cython);
   Py_VISIT(traverse_module_state->__pyx_n_s_shape);
-  Py_VISIT(traverse_module_state->__pyx_n_u_shape);
   Py_VISIT(traverse_module_state->__pyx_n_s_size);
   Py_VISIT(traverse_module_state->__pyx_n_s_sorted);
   Py_VISIT(traverse_module_state->__pyx_n_s_spec);
@@ -5825,7 +5809,6 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
 #define __pyx_n_u_combinatorial __pyx_mstate_global->__pyx_n_u_combinatorial
 #define __pyx_n_s_combinatorial_combinaison_noise __pyx_mstate_global->__pyx_n_s_combinatorial_combinaison_noise
 #define __pyx_n_s_combinatorial_encoder __pyx_mstate_global->__pyx_n_s_combinatorial_encoder
-#define __pyx_n_u_combinatorial_encoder_2 __pyx_mstate_global->__pyx_n_u_combinatorial_encoder_2
 #define __pyx_n_s_combinatorial_factor __pyx_mstate_global->__pyx_n_s_combinatorial_factor
 #define __pyx_n_s_combinatorial_roll __pyx_mstate_global->__pyx_n_s_combinatorial_roll
 #define __pyx_n_s_concatenate __pyx_mstate_global->__pyx_n_s_concatenate
@@ -5853,7 +5836,6 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
 #define __pyx_n_s_error __pyx_mstate_global->__pyx_n_s_error
 #define __pyx_n_u_exact __pyx_mstate_global->__pyx_n_u_exact
 #define __pyx_n_s_exact_encoder __pyx_mstate_global->__pyx_n_s_exact_encoder
-#define __pyx_n_s_exit __pyx_mstate_global->__pyx_n_s_exit
 #define __pyx_n_u_first_index __pyx_mstate_global->__pyx_n_u_first_index
 #define __pyx_n_s_flags __pyx_mstate_global->__pyx_n_s_flags
 #define __pyx_n_s_float32 __pyx_mstate_global->__pyx_n_s_float32
@@ -5904,7 +5886,6 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
 #define __pyx_n_s_name __pyx_mstate_global->__pyx_n_s_name
 #define __pyx_n_s_name_2 __pyx_mstate_global->__pyx_n_s_name_2
 #define __pyx_n_s_nb_episode __pyx_mstate_global->__pyx_n_s_nb_episode
-#define __pyx_n_u_nb_one __pyx_mstate_global->__pyx_n_u_nb_one
 #define __pyx_n_s_ndim __pyx_mstate_global->__pyx_n_s_ndim
 #define __pyx_n_s_networks_list __pyx_mstate_global->__pyx_n_s_networks_list
 #define __pyx_n_s_neuron_reset __pyx_mstate_global->__pyx_n_s_neuron_reset
@@ -5970,7 +5951,6 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
 #define __pyx_n_s_setstate __pyx_mstate_global->__pyx_n_s_setstate
 #define __pyx_n_s_setstate_cython __pyx_mstate_global->__pyx_n_s_setstate_cython
 #define __pyx_n_s_shape __pyx_mstate_global->__pyx_n_s_shape
-#define __pyx_n_u_shape __pyx_mstate_global->__pyx_n_u_shape
 #define __pyx_n_s_size __pyx_mstate_global->__pyx_n_s_size
 #define __pyx_n_s_sorted __pyx_mstate_global->__pyx_n_s_sorted
 #define __pyx_n_s_spec __pyx_mstate_global->__pyx_n_s_spec
@@ -27725,7 +27705,7 @@ __pyx_v_indices_to_keep = __pyx_t_26;
  * 
  *         self.combinatorial_encoder_table_view = self.combinatorial_encoder_table             # <<<<<<<<<<<<<<
  *         self.is_combinatorial_encoder_decoder_init = True
- *         print("combinatorial_encoder\n", self.combinatorial_encoder_table, "shape", np.shape(self.combinatorial_encoder_table), "nb_one", np.sum(self.combinatorial_encoder_table))
+ *         # print("combinatorial_encoder\n", self.combinatorial_encoder_table, "shape", np.shape(self.combinatorial_encoder_table), "nb_one", np.sum(self.combinatorial_encoder_table))
  */
   __pyx_t_29 = __Pyx_PyObject_to_MemoryviewSlice_dsds_float(((PyObject *)__pyx_v_self->combinatorial_encoder_table), PyBUF_WRITABLE); if (unlikely(!__pyx_t_29.memview)) __PYX_ERR(0, 307, __pyx_L1_error)
   __PYX_XCLEAR_MEMVIEW(&__pyx_v_self->combinatorial_encoder_table_view, 0);
@@ -27737,107 +27717,10 @@ __pyx_v_indices_to_keep = __pyx_t_26;
  * 
  *         self.combinatorial_encoder_table_view = self.combinatorial_encoder_table
  *         self.is_combinatorial_encoder_decoder_init = True             # <<<<<<<<<<<<<<
- *         print("combinatorial_encoder\n", self.combinatorial_encoder_table, "shape", np.shape(self.combinatorial_encoder_table), "nb_one", np.sum(self.combinatorial_encoder_table))
- *         exit()
+ *         # print("combinatorial_encoder\n", self.combinatorial_encoder_table, "shape", np.shape(self.combinatorial_encoder_table), "nb_one", np.sum(self.combinatorial_encoder_table))
+ *         # exit()
  */
   __pyx_v_self->is_combinatorial_encoder_decoder_init = 1;
-
-  /* "runner_RL_cython.pyx":309
- *         self.combinatorial_encoder_table_view = self.combinatorial_encoder_table
- *         self.is_combinatorial_encoder_decoder_init = True
- *         print("combinatorial_encoder\n", self.combinatorial_encoder_table, "shape", np.shape(self.combinatorial_encoder_table), "nb_one", np.sum(self.combinatorial_encoder_table))             # <<<<<<<<<<<<<<
- *         exit()
- * 
- */
-  __Pyx_GetModuleGlobalName(__pyx_t_25, __pyx_n_s_np); if (unlikely(!__pyx_t_25)) __PYX_ERR(0, 309, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_25);
-  __pyx_t_28 = __Pyx_PyObject_GetAttrStr(__pyx_t_25, __pyx_n_s_shape); if (unlikely(!__pyx_t_28)) __PYX_ERR(0, 309, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_28);
-  __Pyx_DECREF(__pyx_t_25); __pyx_t_25 = 0;
-  __pyx_t_25 = NULL;
-  __pyx_t_17 = 0;
-  #if CYTHON_UNPACK_METHODS
-  if (unlikely(PyMethod_Check(__pyx_t_28))) {
-    __pyx_t_25 = PyMethod_GET_SELF(__pyx_t_28);
-    if (likely(__pyx_t_25)) {
-      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_28);
-      __Pyx_INCREF(__pyx_t_25);
-      __Pyx_INCREF(function);
-      __Pyx_DECREF_SET(__pyx_t_28, function);
-      __pyx_t_17 = 1;
-    }
-  }
-  #endif
-  {
-    PyObject *__pyx_callargs[2] = {__pyx_t_25, ((PyObject *)__pyx_v_self->combinatorial_encoder_table)};
-    __pyx_t_11 = __Pyx_PyObject_FastCall(__pyx_t_28, __pyx_callargs+1-__pyx_t_17, 1+__pyx_t_17);
-    __Pyx_XDECREF(__pyx_t_25); __pyx_t_25 = 0;
-    if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 309, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_11);
-    __Pyx_DECREF(__pyx_t_28); __pyx_t_28 = 0;
-  }
-  __Pyx_GetModuleGlobalName(__pyx_t_25, __pyx_n_s_np); if (unlikely(!__pyx_t_25)) __PYX_ERR(0, 309, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_25);
-  __pyx_t_9 = __Pyx_PyObject_GetAttrStr(__pyx_t_25, __pyx_n_s_sum); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 309, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_9);
-  __Pyx_DECREF(__pyx_t_25); __pyx_t_25 = 0;
-  __pyx_t_25 = NULL;
-  __pyx_t_17 = 0;
-  #if CYTHON_UNPACK_METHODS
-  if (unlikely(PyMethod_Check(__pyx_t_9))) {
-    __pyx_t_25 = PyMethod_GET_SELF(__pyx_t_9);
-    if (likely(__pyx_t_25)) {
-      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_9);
-      __Pyx_INCREF(__pyx_t_25);
-      __Pyx_INCREF(function);
-      __Pyx_DECREF_SET(__pyx_t_9, function);
-      __pyx_t_17 = 1;
-    }
-  }
-  #endif
-  {
-    PyObject *__pyx_callargs[2] = {__pyx_t_25, ((PyObject *)__pyx_v_self->combinatorial_encoder_table)};
-    __pyx_t_28 = __Pyx_PyObject_FastCall(__pyx_t_9, __pyx_callargs+1-__pyx_t_17, 1+__pyx_t_17);
-    __Pyx_XDECREF(__pyx_t_25); __pyx_t_25 = 0;
-    if (unlikely(!__pyx_t_28)) __PYX_ERR(0, 309, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_28);
-    __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
-  }
-  __pyx_t_9 = PyTuple_New(6); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 309, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_9);
-  __Pyx_INCREF(__pyx_n_u_combinatorial_encoder_2);
-  __Pyx_GIVEREF(__pyx_n_u_combinatorial_encoder_2);
-  if (__Pyx_PyTuple_SET_ITEM(__pyx_t_9, 0, __pyx_n_u_combinatorial_encoder_2)) __PYX_ERR(0, 309, __pyx_L1_error);
-  __Pyx_INCREF((PyObject *)__pyx_v_self->combinatorial_encoder_table);
-  __Pyx_GIVEREF((PyObject *)__pyx_v_self->combinatorial_encoder_table);
-  if (__Pyx_PyTuple_SET_ITEM(__pyx_t_9, 1, ((PyObject *)__pyx_v_self->combinatorial_encoder_table))) __PYX_ERR(0, 309, __pyx_L1_error);
-  __Pyx_INCREF(__pyx_n_u_shape);
-  __Pyx_GIVEREF(__pyx_n_u_shape);
-  if (__Pyx_PyTuple_SET_ITEM(__pyx_t_9, 2, __pyx_n_u_shape)) __PYX_ERR(0, 309, __pyx_L1_error);
-  __Pyx_GIVEREF(__pyx_t_11);
-  if (__Pyx_PyTuple_SET_ITEM(__pyx_t_9, 3, __pyx_t_11)) __PYX_ERR(0, 309, __pyx_L1_error);
-  __Pyx_INCREF(__pyx_n_u_nb_one);
-  __Pyx_GIVEREF(__pyx_n_u_nb_one);
-  if (__Pyx_PyTuple_SET_ITEM(__pyx_t_9, 4, __pyx_n_u_nb_one)) __PYX_ERR(0, 309, __pyx_L1_error);
-  __Pyx_GIVEREF(__pyx_t_28);
-  if (__Pyx_PyTuple_SET_ITEM(__pyx_t_9, 5, __pyx_t_28)) __PYX_ERR(0, 309, __pyx_L1_error);
-  __pyx_t_11 = 0;
-  __pyx_t_28 = 0;
-  __pyx_t_28 = __Pyx_PyObject_Call(__pyx_builtin_print, __pyx_t_9, NULL); if (unlikely(!__pyx_t_28)) __PYX_ERR(0, 309, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_28);
-  __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
-  __Pyx_DECREF(__pyx_t_28); __pyx_t_28 = 0;
-
-  /* "runner_RL_cython.pyx":310
- *         self.is_combinatorial_encoder_decoder_init = True
- *         print("combinatorial_encoder\n", self.combinatorial_encoder_table, "shape", np.shape(self.combinatorial_encoder_table), "nb_one", np.sum(self.combinatorial_encoder_table))
- *         exit()             # <<<<<<<<<<<<<<
- * 
- * 
- */
-  __pyx_t_28 = __Pyx_PyObject_CallNoArg(__pyx_builtin_exit); if (unlikely(!__pyx_t_28)) __PYX_ERR(0, 310, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_28);
-  __Pyx_DECREF(__pyx_t_28); __pyx_t_28 = 0;
 
   /* "runner_RL_cython.pyx":268
  *     @cython.cdivision(True)
@@ -50805,7 +50688,6 @@ static int __Pyx_CreateStringTabAndInitStrings(void) {
     {&__pyx_n_u_combinatorial, __pyx_k_combinatorial, sizeof(__pyx_k_combinatorial), 0, 1, 0, 1},
     {&__pyx_n_s_combinatorial_combinaison_noise, __pyx_k_combinatorial_combinaison_noise, sizeof(__pyx_k_combinatorial_combinaison_noise), 0, 0, 1, 1},
     {&__pyx_n_s_combinatorial_encoder, __pyx_k_combinatorial_encoder, sizeof(__pyx_k_combinatorial_encoder), 0, 0, 1, 1},
-    {&__pyx_n_u_combinatorial_encoder_2, __pyx_k_combinatorial_encoder_2, sizeof(__pyx_k_combinatorial_encoder_2), 0, 1, 0, 1},
     {&__pyx_n_s_combinatorial_factor, __pyx_k_combinatorial_factor, sizeof(__pyx_k_combinatorial_factor), 0, 0, 1, 1},
     {&__pyx_n_s_combinatorial_roll, __pyx_k_combinatorial_roll, sizeof(__pyx_k_combinatorial_roll), 0, 0, 1, 1},
     {&__pyx_n_s_concatenate, __pyx_k_concatenate, sizeof(__pyx_k_concatenate), 0, 0, 1, 1},
@@ -50833,7 +50715,6 @@ static int __Pyx_CreateStringTabAndInitStrings(void) {
     {&__pyx_n_s_error, __pyx_k_error, sizeof(__pyx_k_error), 0, 0, 1, 1},
     {&__pyx_n_u_exact, __pyx_k_exact, sizeof(__pyx_k_exact), 0, 1, 0, 1},
     {&__pyx_n_s_exact_encoder, __pyx_k_exact_encoder, sizeof(__pyx_k_exact_encoder), 0, 0, 1, 1},
-    {&__pyx_n_s_exit, __pyx_k_exit, sizeof(__pyx_k_exit), 0, 0, 1, 1},
     {&__pyx_n_u_first_index, __pyx_k_first_index, sizeof(__pyx_k_first_index), 0, 1, 0, 1},
     {&__pyx_n_s_flags, __pyx_k_flags, sizeof(__pyx_k_flags), 0, 0, 1, 1},
     {&__pyx_n_s_float32, __pyx_k_float32, sizeof(__pyx_k_float32), 0, 0, 1, 1},
@@ -50884,7 +50765,6 @@ static int __Pyx_CreateStringTabAndInitStrings(void) {
     {&__pyx_n_s_name, __pyx_k_name, sizeof(__pyx_k_name), 0, 0, 1, 1},
     {&__pyx_n_s_name_2, __pyx_k_name_2, sizeof(__pyx_k_name_2), 0, 0, 1, 1},
     {&__pyx_n_s_nb_episode, __pyx_k_nb_episode, sizeof(__pyx_k_nb_episode), 0, 0, 1, 1},
-    {&__pyx_n_u_nb_one, __pyx_k_nb_one, sizeof(__pyx_k_nb_one), 0, 1, 0, 1},
     {&__pyx_n_s_ndim, __pyx_k_ndim, sizeof(__pyx_k_ndim), 0, 0, 1, 1},
     {&__pyx_n_s_networks_list, __pyx_k_networks_list, sizeof(__pyx_k_networks_list), 0, 0, 1, 1},
     {&__pyx_n_s_neuron_reset, __pyx_k_neuron_reset, sizeof(__pyx_k_neuron_reset), 0, 0, 1, 1},
@@ -50950,7 +50830,6 @@ static int __Pyx_CreateStringTabAndInitStrings(void) {
     {&__pyx_n_s_setstate, __pyx_k_setstate, sizeof(__pyx_k_setstate), 0, 0, 1, 1},
     {&__pyx_n_s_setstate_cython, __pyx_k_setstate_cython, sizeof(__pyx_k_setstate_cython), 0, 0, 1, 1},
     {&__pyx_n_s_shape, __pyx_k_shape, sizeof(__pyx_k_shape), 0, 0, 1, 1},
-    {&__pyx_n_u_shape, __pyx_k_shape, sizeof(__pyx_k_shape), 0, 1, 0, 1},
     {&__pyx_n_s_size, __pyx_k_size, sizeof(__pyx_k_size), 0, 0, 1, 1},
     {&__pyx_n_s_sorted, __pyx_k_sorted, sizeof(__pyx_k_sorted), 0, 0, 1, 1},
     {&__pyx_n_s_spec, __pyx_k_spec, sizeof(__pyx_k_spec), 0, 0, 1, 1},
@@ -51000,7 +50879,6 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedBuiltins(void) {
   __pyx_builtin_print = __Pyx_GetBuiltinName(__pyx_n_s_print); if (!__pyx_builtin_print) __PYX_ERR(0, 126, __pyx_L1_error)
   __pyx_builtin_format = __Pyx_GetBuiltinName(__pyx_n_s_format); if (!__pyx_builtin_format) __PYX_ERR(0, 281, __pyx_L1_error)
   __pyx_builtin_sorted = __Pyx_GetBuiltinName(__pyx_n_s_sorted); if (!__pyx_builtin_sorted) __PYX_ERR(0, 297, __pyx_L1_error)
-  __pyx_builtin_exit = __Pyx_GetBuiltinName(__pyx_n_s_exit); if (!__pyx_builtin_exit) __PYX_ERR(0, 310, __pyx_L1_error)
   __pyx_builtin___import__ = __Pyx_GetBuiltinName(__pyx_n_s_import); if (!__pyx_builtin___import__) __PYX_ERR(1, 100, __pyx_L1_error)
   __pyx_builtin_ValueError = __Pyx_GetBuiltinName(__pyx_n_s_ValueError); if (!__pyx_builtin_ValueError) __PYX_ERR(1, 141, __pyx_L1_error)
   __pyx_builtin_MemoryError = __Pyx_GetBuiltinName(__pyx_n_s_MemoryError); if (!__pyx_builtin_MemoryError) __PYX_ERR(1, 156, __pyx_L1_error)
@@ -57459,12 +57337,6 @@ fail:;
     return digit;
 }
 
-/* PyObjectCallNoArg */
-  static CYTHON_INLINE PyObject* __Pyx_PyObject_CallNoArg(PyObject *func) {
-    PyObject *arg[2] = {NULL, NULL};
-    return __Pyx_PyObject_FastCall(func, arg + 1, 0 | __Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET);
-}
-
 /* SliceObject */
   static CYTHON_INLINE int __Pyx_PyObject_SetSlice(PyObject* obj, PyObject* value,
         Py_ssize_t cstart, Py_ssize_t cstop,
@@ -57807,6 +57679,12 @@ static PyObject* __Pyx_PyObject_GenericGetAttr(PyObject* obj, PyObject* attr_nam
     return __Pyx_PyObject_GenericGetAttrNoDict(obj, attr_name);
 }
 #endif
+
+/* PyObjectCallNoArg */
+  static CYTHON_INLINE PyObject* __Pyx_PyObject_CallNoArg(PyObject *func) {
+    PyObject *arg[2] = {NULL, NULL};
+    return __Pyx_PyObject_FastCall(func, arg + 1, 0 | __Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET);
+}
 
 /* PyObjectGetMethod */
   static int __Pyx_PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method) {

@@ -12,7 +12,7 @@ cloudpickle==3.0.0
 colorful==0.5.6
 contourpy==1.2.1
 cycler==0.12.1
-Cython==3.0.6
+Cython==3.0.10
 distlib==0.3.8
 Farama-Notifications==0.0.4
 filelock==3.14.0
