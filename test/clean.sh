@@ -1,3 +1,3 @@
 rm *.so
 rm -r config_cache
-# rm -r build
+find ../src/ \( -name "*.so" -o -name "*.o" \) -exec gio trash {} +
