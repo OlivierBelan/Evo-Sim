@@ -8,7 +8,7 @@
 - MAP-ELITE (Multi-dimensional Archive of Phenotypic Elites)
 - NSLC (Novelty Search with Local Competition)
 - CMA-ES (Covariance Matrix Adaptation Evolution Strategy)
-- NES (Neuroevolution Strategies)
+- NES (Natural Evolution Strategies)
 - OpenES (OpenAI Evolution Strategies)
 - ARS (Augmented Random Search)
 - NSGA (Non-dominated Sorting Genetic Algorithm) - (coming soon)
