@@ -148,7 +148,14 @@ class NN:
             self.parameters["tau"][:] = 200.0
             self.parameters["input_current"][:] = 0.0
 
-            if weight_random == True: self.parameters["weight"][self.synapses_actives_indexes] = np.random.uniform(-1, 1, self.synapses_actives_indexes[0].size) #self.weight_parameters[index]
+            if weight_random == True: 
+                self.parameters["weight"][self.synapses_actives_indexes] = self.epsilon_mu_sigma_jit(self.parameters["weight"][self.synapses_actives_indexes], 
+                                                                        self.attributes_manager.mu_parameters["weight"], 
+                                                                        self.attributes_manager.sigma_parameters["weight"], 
+                                                                        self.attributes_manager.min_parameters["weight"], 
+                                                                        self.attributes_manager.max_parameters["weight"], 
+                                                                        0.0, 
+                                                                        1.0)
             else: self.parameters["weight"][self.synapses_actives_indexes] = 1.0
 
             if self.is_refractory == True:
@@ -159,22 +166,34 @@ class NN:
         elif is_random == False and self.network_type == "ANN":
             # Set Static parameters -> Only the weights are dynamic
             self.parameters["bias"][:] = 0
-            if weight_random == True: self.parameters["weight"][self.synapses_actives_indexes] = np.random.uniform(-1, 1, self.synapses_actives_indexes[0].size) #self.weight_parameters[index]
+            if weight_random == True: 
+                self.parameters["weight"][self.synapses_actives_indexes] = self.epsilon_mu_sigma_jit(self.parameters["weight"][self.synapses_actives_indexes],
+                                                                        self.attributes_manager.mu_parameters["weight"],
+                                                                        self.attributes_manager.sigma_parameters["weight"],
+                                                                        self.attributes_manager.min_parameters["weight"],
+                                                                        self.attributes_manager.max_parameters["weight"],
+                                                                        0.0,
+                                                                        1.0)
             else: self.parameters["weight"][self.synapses_actives_indexes] = 1.0
 
         elif is_random == True and self.network_type == "SNN":
             # Set Random parameters
-            # self.parameters["voltage"][:] = np.random.uniform(self.attributes_manager.min_parameters["voltage"], self.attributes_manager.max_parameters["voltage"], self.nb_neurons)
-            # self.parameters["threshold"][:] = np.random.uniform(self.attributes_manager.min_parameters["threshold"], self.attributes_manager.max_parameters["threshold"], self.nb_neurons)
-            # self.parameters["tau"][:] = np.random.uniform(self.attributes_manager.min_parameters["tau"], self.attributes_manager.max_parameters["tau"], self.nb_neurons)
-            # self.parameters["input_current"][:] = np.random.uniform(self.attributes_manager.min_parameters["input_current"], self.attributes_manager.max_parameters["input_current"], self.nb_neurons)
-
-            # self.parameters["weight"][self.synapses_actives_indexes] = np.random.uniform(self.attributes_manager.min_parameters["weight"], self.attributes_manager.max_parameters["weight"], self.synapses_actives_indexes[0].size)
-
             if self.is_refractory == True:
-                self.parameters["refractory"][:] = np.random.uniform(self.attributes_manager.min_parameters["refractory"], self.attributes_manager.max_parameters["refractory"], self.nb_neurons)
+                self.parameters["refractory"][:] = self.epsilon_mu_sigma_jit(self.parameters["refractory"],
+                                                                        self.attributes_manager.mu_parameters["refractory"],
+                                                                        self.attributes_manager.sigma_parameters["refractory"],
+                                                                        self.attributes_manager.min_parameters["refractory"],
+                                                                        self.attributes_manager.max_parameters["refractory"],
+                                                                        0.0,
+                                                                        1.0)
             if self.is_delay == True:
-                self.parameters["delay"][self.synapses_actives_indexes] = np.random.uniform(self.attributes_manager.min_parameters["delay"], self.attributes_manager.max_parameters["delay"], self.synapses_actives_indexes[0].size)
+                self.parameters["delay"][self.synapses_actives_indexes] = self.epsilon_mu_sigma_jit(self.parameters["delay"][self.synapses_actives_indexes],
+                                                                        self.attributes_manager.mu_parameters["delay"],
+                                                                        self.attributes_manager.sigma_parameters["delay"],
+                                                                        self.attributes_manager.min_parameters["delay"],
+                                                                        self.attributes_manager.max_parameters["delay"],
+                                                                        0.0,
+                                                                        1.0)
             
 
             self.parameters["voltage"][:] = self.epsilon_mu_sigma_jit(self.parameters["voltage"], 
@@ -223,10 +242,16 @@ class NN:
         elif is_random == True and self.network_type == "ANN":
             # Set Random parameters
             if "bias" in self.attributes_manager.min_parameters:
-                self.parameters["bias"][:] = np.random.uniform(self.attributes_manager.min_parameters["bias"], self.attributes_manager.max_parameters["bias"], self.nb_neurons)
+                self.parameters["bias"][:] = self.epsilon_mu_sigma_jit(self.parameters["bias"], 
+                                                                        self.attributes_manager.mu_parameters["bias"], 
+                                                                        self.attributes_manager.sigma_parameters["bias"], 
+                                                                        self.attributes_manager.min_parameters["bias"], 
+                                                                        self.attributes_manager.max_parameters["bias"], 
+                                                                        0.0, 
+                                                                        1.0)
             else:
                 self.parameters["bias"][:] = 0.0
-            # self.parameters["weight"][self.synapses_actives_indexes] = np.random.uniform(self.attributes_manager.min_parameters["weight"], self.attributes_manager.max_parameters["weight"], self.synapses_actives_indexes[0].size)
+
             self.parameters["weight"][self.synapses_actives_indexes] = self.epsilon_mu_sigma_jit(self.parameters["weight"][self.synapses_actives_indexes], 
                                                                         self.attributes_manager.mu_parameters["weight"], 
                                                                         self.attributes_manager.sigma_parameters["weight"], 

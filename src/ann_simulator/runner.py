@@ -453,16 +453,18 @@ class NN_Custom_torch_2(nn.Module):
                     output_activation:Callable = output_layer_config["activation"]
                     output_norm:bool = output_layer_config["norm"]
                     output_tensor:torch.Tensor = self.layers[output_layer_name]["output"]
+                    output_bias:torch.Tensor = self.layers[output_layer_name]["bias"]
                     connection_weight:nn.Linear = self.connection[input_layer_name + "->" + output_layer_name]
                     print("\noutput_layer_name:", output_layer_name)
                     print("output_activation:", output_activation)
                     print("output_norm:", output_norm)
+                    print("output_bias:", output_bias)
                     print("output_tensor before activation:\n", output_tensor)
                     if input_norm == True or output_norm == True:
                         norm_function:nn.LayerNorm = self.layers[output_layer_name]["norm"]
-                        self.layers[output_layer_name]["output"] = output_tensor + output_activation(input_activation(norm_function(connection_weight(input_tensor))))
+                        self.layers[output_layer_name]["output"] = output_tensor + output_activation(input_activation(norm_function(connection_weight(input_tensor) + output_bias)))
                     else:
-                        self.layers[output_layer_name]["output"] = output_tensor + output_activation(input_activation(connection_weight(input_tensor)))
+                        self.layers[output_layer_name]["output"] = output_tensor + output_activation(input_activation(connection_weight(input_tensor) + output_bias))
                     print("\noutput_tensor after activation:\n", self.layers[output_layer_name]["output"]," \n")
 
         # 2 - Output Layer
@@ -512,13 +514,14 @@ class NN_Custom_torch_2(nn.Module):
                     output_activation:Callable = output_layer_config["activation"]
                     output_norm:bool = output_layer_config["norm"]
                     output_tensor:torch.Tensor = self.layers[output_layer_name]["output"]
+                    output_bias:torch.Tensor = self.layers[output_layer_name]["bias"]                    
                     connection_weight:nn.Linear = self.connection[input_layer_name + "->" + output_layer_name]
 
                     if input_norm == True or output_norm == True:
                         norm_function:nn.LayerNorm = self.layers[output_layer_name]["norm"]
-                        self.layers[output_layer_name]["output"] = output_tensor + output_activation(input_activation(norm_function(connection_weight(input_tensor))))
+                        self.layers[output_layer_name]["output"] = output_tensor + output_activation(input_activation(norm_function(connection_weight(input_tensor) + output_bias)))
                     else:
-                        self.layers[output_layer_name]["output"] = output_tensor + output_activation(input_activation(connection_weight(input_tensor)))
+                        self.layers[output_layer_name]["output"] = output_tensor + output_activation(input_activation(connection_weight(input_tensor) + output_bias))
 
         # 2 - Output Layer
         output_activation:Callable = self.forward_config["O"]["activation"]
