@@ -1,18 +1,62 @@
 # Evo-Sim
-A NeuroEvolutionary Simulator - Compatible with Spiking Neural Networks  &amp; Artificial Neural Networks
+**Evo-Sim** is a comprehensive neuroevolutionary simulator designed to support both Spiking Neural Networks (SNNs) and Artificial Neural Networks (ANNs). It integrates a variety of sophisticated algorithms tailored for evolutionary simulation and neural network experimentation.
 
-Algorithm: GA, NEAT, HyperNEAT, MAP-ELITE, Novelty-Search Local Competion (NSLC), CMA-ES, NES, OpenES, ARS, NSGA and ES-HyperNEAT (coming soon).
+## Supported Algorithms
+- GA (Genetic Algorithm)
+- NEAT (NeuroEvolution of Augmenting Topologies)
+- HyperNetwork (HyperNEAT if used with NEAT but can be used with any other algorithms)
+- MAP-ELITE (Multi-dimensional Archive of Phenotypic Elites)
+- NSLC (Novelty Search with Local Competition)
+- CMA-ES (Covariance Matrix Adaptation Evolution Strategy)
+- NES (Neuroevolution Strategies)
+- OpenES (OpenAI Evolution Strategies)
+- ARS (Augmented Random Search)
+- NSGA (Non-dominated Sorting Genetic Algorithm) - (coming soon)
+- ES-HyperNEAT - (coming soon)
 
-A complete documentation is coming very soon.
+**Note:** Comprehensive documentation will be available soon.
+
+## Installation
+
+### Create a virtual environment
+It is recommended to use a virtual environment for installation to manage dependencies effectively. Follow these steps to set up your environment and install the required packages:
+
+```bash
+python3 -m venv env/
+source env/bin/activate
+```
+### Installing Dependencies
+Execute the script below to install all necessary packages on Linux or macOS:
+
+```bash
+bash install_linux_mac.sh
+```
 
 
-To test the program, execute either python test_SL.py NES-evosax or python test_RL.py NES-evosax from within the test folder. Additional options are available in the test_SL.py and test_RL.py files, as well as within the configuration files located in the config folder.
+## Usage
+To start using Evo-Sim, you can run a test example with the following command:
+```bash
+python test_SL.py --algo NEAT --problem WINE --nn SNN --nb_runs 2 --nb_generation 200 --record False --cpu 20
+```
+or 
+```bash
+python test_RL.py --problem HalfCheetah --algo NES-evosax --nn SNN --nb_runs 2 --nb_generation 200 --nb_episodes 1 --record False --cpu 20
+```
 
-To facilitate comparisons, an ANN runner built with PyTorch is also available. To use it, uncomment the line start_config_path = "./config/config_ann/SL/" in either test_SL.py or test_RL.py, and comment out the corresponding SNN configuration line start_config_path = "./config/config_snn/SL/"
 
-During the installation/run of pybullet env (QD_env), if you encounter the following error:
+## Troubleshooting
+### Common Issue: PyBullet Environment Error
+
+
+Common Issue: PyBullet Environment Error
+If you encounter an ```AttributeError``` related to the ```pybullet``` environment during installation or execution:
 ```AttributeError: 'dict' object has no attribute 'env_specs'```
-You can fix it by changing the file ```pybullet_envs/__init__.py``` the section:
+
+Here is how to resolve it:
+
+Locate and modify the `pybullet_envs/__init__.py` file as follows:
+
+#### Original Code:
 ```python
 def register(id, *args, **kvargs):
   if id in registry.env_specs:
@@ -20,7 +64,7 @@ def register(id, *args, **kvargs):
   else:
     return gym.envs.registration.register(id, *args, **kvargs)
 ```
-to:
+#### Modified Code:
 ```python
 def register(id, *args, **kvargs):
   if id in registry:
