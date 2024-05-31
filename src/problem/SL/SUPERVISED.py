@@ -21,7 +21,6 @@ class Supervised_Manager(Runner_Info, Problem):
         Runner_Info.__init__(self, config_path)
         Problem.__init__(self)
         # Public variables
-        self.run_number:int = 0
         self.config_path:str = config_path
         self.config:Dict[str, Dict[str, Any]] = TOOLS.config_function(config_path, ["Genome_NN", "NEURO_EVOLUTION"])
         self.network_type:str = self.config["Genome_NN"]["network_type"]
@@ -34,21 +33,21 @@ class Supervised_Manager(Runner_Info, Problem):
         self.is_bias:bool = TOOLS.is_config_section(config_path, "bias_neuron_parameter")
 
         # Private variables
+        if isinstance(features, np.ndarray) == False and features == None: return
+        if isinstance(labels, np.ndarray) == False and labels == None: return
         self.__batch_index:int = 0
         self.__build_batches(features, labels) # create batches of data set
     
 
-    def run(self, population:Population, run_nb:int, generation:int, seed:int=None, indexes:set=None) -> Population:  
+    def run(self, population:Population, generation:int, seed:int=None, indexes:set=None) -> Population:  
         if indexes is not None:
             indexes = set(indexes)
             genomes:Dict[int, Genome_NN] = {genome.id:genome for i , genome in enumerate(population.population.values()) if i in indexes}
         else:
             genomes:Dict[int, Genome_NN] = population.population
-        self.run_number:int = run_nb
-        self.generation:int = generation
-
+        
         # 1 - Select Batch for the run
-        features_batch, labels_batch = self.__select_random_batch()
+        features_batch, labels_batch = self.__select_random_batch(generation)
         
         # 2 - RUN NNs
         if self.network_type == "SNN":
@@ -116,9 +115,9 @@ class Supervised_Manager(Runner_Info, Problem):
         self.features_batches = np.split(features, np.arange(self.batch_features, len(features), self.batch_features))
         self.__batch_index:np.ndarray = np.random.randint(len(self.labels_batches), size=self.nb_generations)
 
-    def __select_random_batch(self) -> Tuple[np.ndarray, np.ndarray]:
-        features = self.features_batches[self.__batch_index[self.generation]]
-        labels = self.labels_batches[self.__batch_index[self.generation]]
+    def __select_random_batch(self, generation) -> Tuple[np.ndarray, np.ndarray]:
+        features = self.features_batches[self.__batch_index[generation]]
+        labels = self.labels_batches[self.__batch_index[generation]]
         return features, labels
 
     def record_energy(self, genomes:Dict[int, Genome_NN], records:Dict[str,Dict[str, np.ndarray]]):

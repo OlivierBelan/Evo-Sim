@@ -55,7 +55,7 @@ cdef class Runner_RL_cython:
         self.is_record_augmented = "augmented" in record_decoding_method
 
         if self.is_augmented_decoder == True:
-            self.spike_max_time_step = <int>max(np.rint(self.spikes_max/(self.run_time_margin-1)), 1)
+            self.spike_max_time_step = <int>max(np.rint(self.spike_distribution_run/(self.run_time_margin-1)), 1)
             if self.spike_distribution_importance > 0:
                 self.spikes_importance = self.augmented_linear_spike_importance(self.spike_distribution_importance, self.run_time_margin-1, is_descending=self.linear_spike_importance_type)
             else:
@@ -697,8 +697,12 @@ cdef class Runner_RL_cython:
                         spike_state_decoder_view[i, j, k] = (self.voltage_decoder_view[i, j, k]/self.threshold_decoder_view[j, k]) * self.tau_decoder_view[j, k] * (1/(1+self.refractory_decoder_view[i, j]))
                     
                     spike_floor = math.floor(spike_state_decoder_view[i, j, k])
-                    self.voltage_decoder_view[i, j, k] = spike_state_decoder_view[i, j, k] - spike_floor
-                    # self.voltage_decoder_view[i, j, k] = 0
+
+                    if self.is_voltage_reset == True:
+                        self.voltage_decoder_view[i, j, k] = 0
+                    else:
+                        self.voltage_decoder_view[i, j, k] = spike_state_decoder_view[i, j, k] - spike_floor
+                    # print("self.voltage_decoder_view[i, j, k]", np.array(self.voltage_decoder_view[i, j, k]), "threshold_decoder_view[j, k]", self.threshold_decoder_view[j, k])
 
 
                     # 2 - Add the rounded spike to the spike_state_decoder
@@ -811,11 +815,18 @@ cdef class Runner_RL_cython:
 
     @cython.boundscheck(False)
     @cython.wraparound(False)
-    cpdef void init_augmented_spikes_decoder(self, size_t spike_max = 10, size_t spike_distribution_importance = 10, str importance_type = "nothing", str linear_spike_importance_type = "descending", str spike_type = "positive"):
-        self.spikes_max = spike_max
+    cpdef void init_augmented_spikes_decoder(self, size_t spike_max=10, size_t spike_distribution_run = 10, size_t spike_distribution_importance = 10, str importance_type = "nothing", str linear_spike_importance_type = "descending", str spike_type = "positive", bint is_normalize = False, bint is_interpolate = False, float interpolate_max = 1.0, float interpolate_min = 0.0, bint is_voltage_reset = False):
+        self.spike_max = spike_max
+        self.spike_distribution_run = spike_distribution_run
         self.spike_distribution_importance = spike_distribution_importance
         self.linear_spike_importance_type = True if linear_spike_importance_type == "descending" else False
         self.is_augmented_decoder = True
+
+        self.is_normalize = (is_normalize == True or is_interpolate == True)
+        self.is_interpolate = is_interpolate
+        self.interpolate_max = interpolate_max
+        self.interpolate_min = interpolate_min
+        self.is_voltage_reset = is_voltage_reset
 
         if importance_type == "first_index":
             self.importance_type = 0
@@ -856,15 +867,23 @@ cdef class Runner_RL_cython:
         cdef size_t i, j
         cdef long[:,:,:] spike_sumed
         cdef float[:,:,:] voltage_record
-        cdef float[:,:,:] spike_sumed_decoder
+        # cdef float[:,:,:] spike_sumed_decoder
+        cdef np.ndarray[np.float32_t, ndim=3] spike_sumed_decoder
 
         if self.is_record_spike:
             spike_sumed = np.sum(self.spike_state[:,:, self.neuron_to_record_indexes], axis=3)
         if self.is_record_voltage:
             voltage_record = self.voltage[:, :, self.neuron_to_record_indexes, -1]
+
         if self.is_record_augmented:
             spike_sumed_decoder = np.sum(self.spike_state_decoder, axis=3) 
 
+            if self.is_normalize == True:
+                spike_sumed_decoder = np.clip(spike_sumed_decoder/self.spike_max, 0, 1)
+
+                if self.is_interpolate == True:
+                    spike_sumed_decoder = np.interp(spike_sumed_decoder, (0, 1), (self.interpolate_min, self.interpolate_max)).astype(np.float32)
+         
         for j in range(self.nb_episode):
             for i in range(nb_snns):
                 if self.is_record_spike:

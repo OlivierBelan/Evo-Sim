@@ -58,21 +58,21 @@ class Genome_NN(Genome):
         self.inputs:int = int(self.config_genome["inputs"])
         self.inputs_multiplicator:int = max(1, int(self.config_genome["inputs_multiplicator"])) # number of neurons used to represent one input
 
-        self.hiddens:int = TOOLS.hiddens_nb_from_config(self.config_genome["hiddens"])
-        self.hiddens_active:int = int(self.config_genome["hiddens_active"])
-        self.hiddens_config:List[int] = TOOLS.hiddens_from_config(self.config_genome["hiddens"])
+        self.hiddens_config:Dict[str, int] = TOOLS.hiddens_from_config(self.config_genome["hiddens"])
+        self.hiddens:int = self.hiddens_config["nb_hiddens"]
+        self.hiddens_active:int = self.hiddens_config["nb_hiddens_active"]
 
 
         self.outputs:int = int(self.config_genome["outputs"])
         self.outputs_multiplicator:int = max(1, int(self.config_genome["outputs_multiplicator"])) # number of neurons used to represent one output
 
-        self.architecture, self.hiddens_layer_names = TOOLS.architecture_from_config(self.config_genome["architecture"], len(self.hiddens_config))
+        self.architecture, self.hiddens_layer_names = TOOLS.architecture_from_config(self.config_genome["architecture"], len(self.hiddens_config["layer_names"]))
         self.architecture_print_orignal:str = self.config_genome["inputs"] + "x" + self.config_genome["hiddens"] + "x" + self.config_genome["outputs"]
         self.architecture_print_multiplied:str = str(self.inputs*self.inputs_multiplicator) + "x" + self.config_genome["hiddens"] + "x" + str(self.outputs*self.outputs_multiplicator)
 
         self.is_self_neuron_connection:bool = True if self.config_genome["is_self_neuron_connection"] == "True" else False
 
         self.network_type:str = self.config_genome["network_type"]
-        if self.network_type == "ANN":
-            self.is_inter_hidden_feedback:bool = True if self.config_genome["is_inter_hidden_feedback"] == "True" else False
-            self.is_layer_normalization:bool = True if self.config_genome["is_layer_normalization"] == "True" else False
+        # if self.network_type == "ANN":
+        #     self.is_inter_hidden_feedback:bool = True if self.config_genome["is_inter_hidden_feedback"] == "True" else False
+        #     self.is_layer_normalization:bool = True if self.config_genome["is_layer_normalization"] == "True" else False

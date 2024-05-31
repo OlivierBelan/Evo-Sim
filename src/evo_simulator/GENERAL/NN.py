@@ -49,7 +49,12 @@ class NN:
 
         # Build matrices
         self.neurons_status:np.ndarray = np.zeros(self.nb_neurons, dtype=np.bool_)
-        self.neurons_status[:self.nb_neurons_active] = True
+        self.neurons_status[:self.nb_inputs + self.nb_outputs] = True
+        neurons_counter:int = self.nb_inputs + self.nb_outputs
+        for layer_name in self.hiddens_layer_names:
+            self.neurons_status[neurons_counter : neurons_counter + self.hiddens_config[layer_name]["nb_neurons_active"]] = True
+            neurons_counter += self.hiddens_config[layer_name]["nb_neurons"]
+
         self.synapses_status:np.ndarray = np.zeros((self.nb_neurons, self.nb_neurons), dtype=np.bool_)
         self.synapses_indexes:Tuple[np.ndarray, np.ndarray] = np.where(self.synapses_status == False)
         # print("synapses_indexes: \n", self.synapses_indexes[0], "\n", self.synapses_indexes[1], "\n", self.synapses_indexes[0].size)
@@ -383,13 +388,23 @@ class NN:
         self.hiddens["neurons_indexes_active"] = self.hiddens["neurons_indexes"][np.where(self.hiddens["neurons_status"] == True)[0]]
 
         prev_indexes:int = 0
-        for layer_name, nb_neurons in zip(self.hiddens_layer_names, self.hiddens_config):
+        prev_indexes_active:int = 0
+        # for layer_name, nb_neurons in zip(self.hiddens_layer_names, self.hiddens_config):
+        for layer_name in self.hiddens_layer_names:
+            nb_neurons:int = self.hiddens_config[layer_name]["nb_neurons"]
+            nb_neurons_active:int = self.hiddens_config[layer_name]["nb_neurons_active"]
             self.architecture_neurons[layer_name] = {}
             self.architecture_neurons[layer_name]["neurons_indexes"] = self.hiddens["neurons_indexes"][prev_indexes:prev_indexes+nb_neurons]
-            self.architecture_neurons[layer_name]["neurons_indexes_active"] = self.hiddens["neurons_indexes_active"][prev_indexes:prev_indexes+nb_neurons]
+            self.architecture_neurons[layer_name]["neurons_indexes_active"] = self.hiddens["neurons_indexes_active"][prev_indexes_active:prev_indexes_active+nb_neurons_active]
             self.architecture_neurons[layer_name]["neurons_status"] = self.hiddens["neurons_status"][prev_indexes:prev_indexes+nb_neurons]
             self.architecture_neurons[layer_name]["size"] = nb_neurons
             prev_indexes += nb_neurons
+            prev_indexes_active += nb_neurons_active
+        # print("hidden_neurons_status: ", self.hiddens["neurons_status"])
+        # print("hidden_neurons_indexes: ", self.hiddens["neurons_indexes"])
+        # print("hidden_neurons_indexes_active: ", self.hiddens["neurons_indexes_active"])
+        # print("self.architecture_neurons: ", self.architecture_neurons)
+        # exit()
 
     def __outputs(self):
         if self.network_type == "SNN":

@@ -18,8 +18,9 @@ from evosax import FitnessShaper
 
 
 class EvoSax_algo(Algorithm):
-    def __init__(self, config_path_file:str, algo_name:str) -> None:
-        Algorithm.__init__(self, config_path_file, algo_name)
+    def __init__(self, config_path_file:str, algo_name:str, extra_info:Dict[Any, Any] = None) -> None:
+        Algorithm.__init__(self, config_path_file, algo_name, extra_info)
+
         # Initialize configs
         self.config_es:Dict[str, Dict[str, Any]] = TOOLS.config_function(config_path_file, [algo_name,"Genome_NN","NEURO_EVOLUTION", "Runner_Info"])
 
@@ -212,7 +213,7 @@ class EvoSax_algo(Algorithm):
             if self.network_type == "ANN" and self.is_neuron_param == True:
                 nn.parameters["weight"][nn.synapses_actives_indexes] = np.array(self.population_parameters[index][:self.synapse_parameters_size])
 
-                if nn.parameters["bias"].flags.writeable == False: nn.parameters["bias"] = nn.parameters["weight"].copy()
+                if nn.parameters["bias"].flags.writeable == False: nn.parameters["bias"] = nn.parameters["bias"].copy()
                 nn.parameters["bias"] = np.array(self.population_parameters[index][self.synapse_parameters_size:])  
                 
 

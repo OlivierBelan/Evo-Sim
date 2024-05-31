@@ -5,6 +5,7 @@ sys.path.append('../src/snn_simulator/')
 sys.path.append('../src/evo_simulator/')
 import os
 os.environ["RAY_DEDUP_LOGS"] = "0"
+import argparse
 
 import numpy as np
 from evo_simulator.GENERAL.Neuro_Evolution import Neuro_Evolution
@@ -59,150 +60,212 @@ from RL_problems_config.QDWalker2D import QDWalker2D
 from RL_problems_config.QDHumanoid import QDHumanoid
 
 
-from typing import List, Dict, Tuple
+from typing import List, Dict, Tuple, Any
 np.set_printoptions(threshold=sys.maxsize)
 
 
 
 # Algo Mono-Objective
-def ga_func(config_path) -> Tuple[str, Algorithm, str]:
+def ga_func(config_path) -> Tuple[Neuro_Evolution, str, Dict[str, Any]]:
     # 1 - Config path file
     local_dir = os.path.dirname(__file__)
-    ga_config_path = os.path.join(local_dir, start_config_path + config_path)
+    ga_config_path = os.path.join(local_dir, config_path)
     
     return "GA", GA, ga_config_path
 
-def neat_func(config_path) -> Tuple[Neuro_Evolution, str]:
+def neat_func(config_path) -> Tuple[Neuro_Evolution, str, Dict[str, Any]]:
     # 1 - Config path file
     local_dir = os.path.dirname(__file__)
-    neat_config_path = os.path.join(local_dir, start_config_path + config_path)
-    
-    return "NEAT", NEAT, neat_config_path
+    neat_config_path = os.path.join(local_dir, config_path)
+    extra_info:Dict[str, Any] = {}
 
-def cma_es_func(config_path) -> Tuple[Neuro_Evolution, str]:
-    # 1 - Config path file
-    local_dir = os.path.dirname(__file__)
-    config_path = os.path.join(local_dir, start_config_path + config_path)
-    
-    return "CMAES", CMA_ES, config_path
+    return "NEAT", NEAT, neat_config_path, extra_info
 
-def nes_func(name, config_path) -> Tuple[Neuro_Evolution, str]:
+# def hyperneat_func(config_path, config_path_cppn_neuron, config_path_synapse) -> Tuple[Neuro_Evolution, str, Dict[str, Any]]:
+#     # 1 - Config path file
+#     local_dir = os.path.dirname(__file__)
+#     hyperneat_config_path = os.path.join(local_dir, start_config_path + config_path)
+#     cppn_synpases_config_path = os.path.join(local_dir, start_config_path + config_path_synapse)
+#     cppn_neurons_config_path = os.path.join(local_dir, start_config_path + config_path_cppn_neuron)
+
+#     # 2 - Algorithms
+#     hyperneat_algorithm:HyperNEAT = HyperNEAT(
+#                                         name="HyperNEAT", 
+#                                         config_path_file=hyperneat_config_path,
+#                                         cppn_synpases_config_path=cppn_synpases_config_path,
+#                                         cppn_neurons_config_path=cppn_neurons_config_path,
+#                                         # substrats=hyper_substrat_config.generate_vertical_line_points(13, 12, 3, 3), 
+#                                         substrats=hyper_substrat_config.generate_multi_layer_circle_points(2, 21, 3, 1),
+#                                         substrats_connection=[(0, 1), (1, 2), (1, 1)] # (input, hidden), (hidden, output), (hidden, hidden)
+#                                         )
+#     return hyperneat_algorithm, hyperneat_config_path
+
+def cma_es_func(config_path) -> Tuple[Neuro_Evolution, str, Dict[str, Any]]:
     # 1 - Config path file
     local_dir = os.path.dirname(__file__)
-    neat_config_path = os.path.join(local_dir, start_config_path + config_path)
+    config_path = os.path.join(local_dir, config_path)
+    extra_info:Dict[str, Any] = {}
+    
+    return "CMAES", CMA_ES, config_path, extra_info
+
+def nes_func(config_path) -> Tuple[Neuro_Evolution, str, Dict[str, Any]]:
+    # 1 - Config path file
+    local_dir = os.path.dirname(__file__)
+    neat_config_path = os.path.join(local_dir, config_path)
+    extra_info:Dict[str, Any] = {}
     
     # 2 - Algorithms
-    return name, NES, neat_config_path
+    return "NES", NES, neat_config_path, extra_info
 
-def openES_func(name, config_path) -> Tuple[Neuro_Evolution, str]:
+def openES_func(config_path) -> Tuple[Neuro_Evolution, str, Dict[str, Any]]:
     # 1 - Config path file
     local_dir = os.path.dirname(__file__)
-    neat_config_path = os.path.join(local_dir, start_config_path + config_path)
+    neat_config_path = os.path.join(local_dir, config_path)
+    extra_info:Dict[str, Any] = {}
     
     # 2 - Algorithms
-    return name, OpenES, neat_config_path
+    return "OpenES", OpenES, neat_config_path, extra_info
 
 
 # Algo Multi-Objective
-def map_elite(config_path) -> Tuple[Neuro_Evolution, str]:
+def map_elite(config_path) -> Tuple[Neuro_Evolution, str, Dict[str, Any]]:
     # 1 - Config path file
     local_dir = os.path.dirname(__file__)
-    neat_config_path = os.path.join(local_dir, start_config_path + config_path)
-    
-    return "MAPELITE", MAP_ELITE, neat_config_path
+    neat_config_path = os.path.join(local_dir, config_path)
+    extra_info:Dict[str, Any] = {}
+
+    return "MAPELITE", MAP_ELITE, neat_config_path, extra_info
    
-def nslc(config_path) -> Tuple[Neuro_Evolution, str]:
+def nslc(config_path) -> Tuple[Neuro_Evolution, str, Dict[str, Any]]:
     # 1 - Config path file
     local_dir = os.path.dirname(__file__)
-    config_path = os.path.join(local_dir, start_config_path + config_path)
+    config_path = os.path.join(local_dir, config_path)
+    extra_info:Dict[str, Any] = {}
     
-    return "NSLC", NSLC, config_path
+    return "NSLC", NSLC, config_path, extra_info
 
 # Algo evosax
-def evosax_func(name:str, config_path) -> Tuple[Neuro_Evolution, str]:
+def evosax_func(name:str, config_path) -> Tuple[Neuro_Evolution, str, Dict[str, Any]]:
     # 1 - Config path file
     local_dir = os.path.dirname(__file__)
-    config_path = os.path.join(local_dir, start_config_path + config_path)
+    config_path = os.path.join(local_dir, config_path)
+    extra_info:Dict[str, Any] = {}
 
-    return name, EvoSax_algo, config_path
+    return name, EvoSax_algo, config_path, extra_info
 
-start_config_path = "./config/config_snn/RL/"
-# start_config_path = "./config/config_ann/RL/"
 
-def neuro_evo_matrix_func(args:List[str]):
-    if len(args) == 0:raise Exception("Error: No arguments")
+def parse_arg():
+    def to_bool(s) -> bool:
+        if s == "True":
+            return True
+        else:
+            return False
+    parser = argparse.ArgumentParser(description='Process some integers.')
+    parser.add_argument('--cpu', type=int, help='Number of cpu', default=1)
+    parser.add_argument('--nn', type=str, help='Type of neural network', default="SNN")
+    parser.add_argument('--algo', type=str, help='Algorithm name', default="NES-evosax")
+    parser.add_argument('--problem', type=str, help='Problem name')
+    parser.add_argument('--nb_runs', type=int, help='Number of runs', default=3)
+    parser.add_argument('--nb_generations', type=int, help='Number of generations', default=50)
+    parser.add_argument('--nb_episodes', type=int, help='Number of episodes', default=1)
+    parser.add_argument('--record', type=to_bool, help='Record data', default="False")
 
-    aglos_dict:Dict[str, Tuple[Neuro_Evolution, str]] = {
-        # 1.0 - Algorithms Mono-Objective
-        "NEAT":           neat_func("NEAT_CONFIG_RL.cfg"),
-        "GA":             ga_func("GA_CONFIG_RL.cfg"),
-        "CMA_ES":         cma_es_func("CMA_ES_CONFIG_RL.cfg"),
-        "NES":            nes_func("NES","NES_CONFIG_RL.cfg"),
-        "OpenES":         openES_func("OpenES", "OpenES_CONFIG_RL.cfg"),
-        # "HyperNEAT":      hyperneat_func("HyperNEAT_CONFIG_RL.cfg"), # Comming soon
-        # "ES-HyperNEAT":   es_hyperneat_func("ES-HyperNEAT_CONFIG_RL.cfg"), # Comming soon
+    return parser.parse_args()
 
-        # 1.2 - Algorithms Multi-Objective
-        "MAP_ELITE":      map_elite("MAP_ELITE_CONFIG_RL.cfg"),
-        "NSLC":           nslc("NSLC_CONFIG_RL.cfg"),
 
-        # 1.3 - Algorithms from evoSAX (https://github.com/RobertTLange/evosax)
-        "DE-evosax":      evosax_func("DE-evosax","DE-evosax_CONFIG_RL.cfg"),
-        "ARS-evosax":     evosax_func("ARS-evosax", "ARS-evosax_CONFIG_RL.cfg"),
-        "NES-evosax":     evosax_func("NES-evosax", "NES-evosax_CONFIG_RL.cfg"),
-        "PEPG-evosax":    evosax_func("PEPG-evosax", "PEPG-evosax_CONFIG_RL.cfg"),
-        "OpenES-evosax":  evosax_func("OPENES-evosax", "OpenES-evosax_CONFIG_RL.cfg"),
 
-        
-    }
-    algos = [aglos_dict[arg] for arg in args if arg in aglos_dict]
-    nb_runs:int = 3
-    nb_episode:int = 1
-    nb_generation:int = 100
-    max_seeds:int = 100_000
+def get_algorithm(nn:str, algo:str) -> Tuple[Neuro_Evolution, str, Dict[str, Any]]:
+    # 0 - Config path
+    if nn == "SNN":
+        start_config_path = "./config/config_snn/RL/"
+    elif nn == "ANN":
+        start_config_path = "./config/config_ann/RL/"
+    else:
+        raise Exception("Neural network:" + nn + " not found")
+    
+    # 1.0 - Algorithms Mono-Objective
+    if algo == "NEAT":     return neat_func(start_config_path + "NEAT_CONFIG_RL.cfg")
+    elif algo == "GA":     return ga_func(start_config_path + "GA_CONFIG_RL.cfg")
+    elif algo == "CMA_ES": return cma_es_func(start_config_path + "CMA_ES_CONFIG_RL.cfg")
+    elif algo == "NES":    return nes_func(start_config_path + "NES_CONFIG_RL.cfg")
+    elif algo == "OpenES": return openES_func(start_config_path + "OpenES_CONFIG_RL.cfg")
+    
+    # 1.2 - Algorithms Multi-Objective
+    elif algo == "MAP_ELITE": return map_elite(start_config_path + "MAP_ELITE_CONFIG_RL.cfg")
+    elif algo == "NSLC":      return nslc(start_config_path + "NSLC_CONFIG_RL.cfg")
+    
+    # 1.3 - Algorithms from evoSAX (https://github.com/RobertTLange/evosax)
+    elif algo == "DE-evosax":    return evosax_func("DE-evosax", start_config_path + "DE-evosax_CONFIG_RL.cfg")
+    elif algo == "ARS-evosax":   return evosax_func("ARS-evosax", start_config_path + "ARS-evosax_CONFIG_RL.cfg")
+    elif algo == "NES-evosax":   return evosax_func("NES-evosax", start_config_path + "NES-evosax_CONFIG_RL.cfg")
+    elif algo == "PEPG-evosax":  return evosax_func("PEPG-evosax", start_config_path + "PEPG-evosax_CONFIG_RL.cfg")
+    elif algo == "OpenES-evosax":return evosax_func("OPENES-evosax", start_config_path + "OpenES-evosax_CONFIG_RL.cfg")
+    
+    else:
+        raise Exception("Algorithm" + algo + " not found")
+
+def get_problem(problem:str, config_path:str) -> Tuple[Neuro_Evolution, str, Dict[str, Any]]:
+    # 2 - Environnement
+    # 2.1 - Discrete
+    if problem == "Mountain_Car":          return Mountain_Car("MountainCar", config_path, nb_input=2, nb_output=3, obs_max_init_value=5, obs_min_init_value=-5, auto_obersvation=True)
+    elif problem == "Cart_Pole":           return Cart_Pole_Config("CartPole", config_path, nb_input=4, nb_output=2, obs_max_init_value=5, obs_min_init_value=-5, auto_obersvation=True)
+    elif problem == "Acrobot":             return Acrobot_Config("Acrobot", config_path, nb_input=6, nb_output=3, obs_max_init_value=5, obs_min_init_value=-5, auto_obersvation=False)
+    elif problem == "Lunar_Lander":        return Lunar_Lander("LunarLander", config_path, nb_input=8, nb_output=4, obs_max_init_value=5, obs_min_init_value=-5, auto_obersvation=False)
+    
+    # 2.2 - Continuous
+    elif problem == "Mountain_Car_Continuous":  return Mountain_Car_Continuous("MountainCarContinous", config_path, nb_input=2, nb_output=1, obs_max_init_value=5, obs_min_init_value=-5, auto_obersvation=True)
+    elif problem == "Pendulum":                 return Pendulum("Pendulum", config_path, nb_input=3, nb_output=1, obs_max_init_value=5, obs_min_init_value=-5, auto_obersvation=True)
+    elif problem == "Lunar_Lander_Continuous":  return Lunar_Lander_Continuous("LunarLanderContinuous", config_path, nb_input=8, nb_output=2, obs_max_init_value=5, obs_min_init_value=-5, auto_obersvation=False)
+    elif problem == "Bipedal_Walker":           return Bipedal_Walker("BipedWalker", config_path, nb_input=24, nb_output=4, obs_max_init_value=5, obs_min_init_value=-5, auto_obersvation=False, hardcore=False)
+    
+    # 2.3 - Continuous Robot
+    elif problem == "Swimmer":                 return Swimmer("Swimmer", config_path, nb_input=8, nb_output=2, obs_max_init_value=5, obs_min_init_value=-5, auto_obersvation=True)
+    elif problem == "Hopper":                  return Hopper("Hopper", config_path, nb_input=11, nb_output=3, obs_max_init_value=5, obs_min_init_value=-5, auto_obersvation=True)
+    elif problem == "HalfCheetah":             return HalfCheetah("HalfCheetah", config_path, nb_input=17, nb_output=6, obs_max_init_value=5, obs_min_init_value=-5, auto_obersvation=True)
+    elif problem == "Walker2D":                return Walker2D("Walker2D", config_path, nb_input=17, nb_output=6, obs_max_init_value=5, obs_min_init_value=-5, auto_obersvation=True)
+    elif problem == "Ant":                     return Ant("Ant", config_path, nb_input=27, nb_output=8, obs_max_init_value=5, obs_min_init_value=-5, auto_obersvation=True)
+
+    # 2.4 - QD Gym
+    elif problem == "QDHalfCheetah":           return QDHalfCheetah("QDHalfCheetah", config_path, nb_input=26, nb_output=6, obs_max_init_value=5, obs_min_init_value=-5, auto_obersvation=True)
+    elif problem == "QDAnt":                   return QDAnt("QDAnt", config_path, nb_input=28, nb_output=8, obs_max_init_value=5, obs_min_init_value=-5, auto_obersvation=True)
+    elif problem == "QDHopper":                return QDHopper("QDHopper", config_path, nb_input=15, nb_output=3, obs_max_init_value=5, obs_min_init_value=-5, auto_obersvation=True)
+    elif problem == "QDWalker":                return QDWalker2D("QDWalker", config_path, nb_input=22, nb_output=6, obs_max_init_value=5, obs_min_init_value=-5, auto_obersvation=True)
+    elif problem == "QDHumanoid":              return QDHumanoid("QDHumanoid", config_path, nb_input=44, nb_output=17, obs_max_init_value=5, obs_min_init_value=-5, auto_obersvation=True)
+
+    else:
+        raise Exception("Problem" + problem + " not found")
+
+def neuro_evo_matrix_func():
+    args = parse_arg()
+
+    # 1 - Algorithm
+    name, algorithm, config_path, algo_extra_info = get_algorithm(args.nn, args.algo)
+
+    # 2 - Problem
+    environnement = get_problem(args.problem, config_path)
+
+
+    # 3 - Seeds
     seeds = []
-    for _ in range(nb_runs): seeds.append(np.random.choice(np.arange(max_seeds), size=nb_episode, replace=False))
+    max_seeds:int = 1_000_000
+    for _ in range(args.nb_runs): seeds.append(np.random.choice(np.arange(max_seeds), size=args.nb_episodes, replace=False))
     seeds = np.array(seeds)
     print("seeds: ", seeds)
 
-    for name, algorithm, config_path in algos:
-        # 2 - Environnement
-
-        # 2.1 - Discrete
-        # environnement:Mountain_Car = Mountain_Car("MountainCar", config_path, nb_input=2, nb_output=3, obs_max_init_value=5, obs_min_init_value=-5, auto_obersvation=True)
-        # environnement:Cart_Pole_Config = Cart_Pole_Config("CartPole", config_path, nb_input=4, nb_output=2, obs_max_init_value=5, obs_min_init_value=-5, auto_obersvation=True)
-        # environnement:Acrobot_Config = Acrobot_Config("Acrobot", config_path, nb_input=6, nb_output=3, obs_max_init_value=5, obs_min_init_value=-5, auto_obersvation=False)
-        # environnement:Lunar_Lander = Lunar_Lander("LunarLander", config_path, nb_input=8, nb_output=4, obs_max_init_value=5, obs_min_init_value=-5, auto_obersvation=False)
-
-        # 2.2 - Continuous
-        environnement:Mountain_Car_Continuous = Mountain_Car_Continuous("MountainCarContinous", config_path, nb_input=2, nb_output=1, obs_max_init_value=5, obs_min_init_value=-5, auto_obersvation=True)
-        # environnement:Pendulum = Pendulum("Pendulum", config_path, nb_input=3, nb_output=1, obs_max_init_value=5, obs_min_init_value=-5, auto_obersvation=True)
-        # environnement:Lunar_Lander = Lunar_Lander_Continuous("LunarLanderContinuous", config_path, nb_input=8, nb_output=2, obs_max_init_value=5, obs_min_init_value=-5, auto_obersvation=False)
-        # environnement:Bipedal_Walker = Bipedal_Walker("BipedWalker", config_path, nb_input=24, nb_output=4, obs_max_init_value=5, obs_min_init_value=-5, auto_obersvation=False, hardcore=False)
+    # 4 - Run
+    neuro:Neuro_Evolution = Neuro_Evolution(nb_generations=args.nb_generations, nb_runs=args.nb_runs, is_record=args.record, is_Archive=False, config_path=config_path, cpu=args.cpu)
+    neuro.init_algorithm(name, algorithm, config_path, algo_extra_info)
 
 
-        # 2.3 - Continuous Robot
-        # environnement:Swimmer = Swimmer("Swimmer", config_path, nb_input=8, nb_output=2, obs_max_init_value=5, obs_min_init_value=-5, auto_obersvation=True)
-        # environnement:Hopper = Hopper("Hopper", config_path, nb_input=11, nb_output=3, obs_max_init_value=5, obs_min_init_value=-5, auto_obersvation=True)
-        # environnement:HalfCheetah = HalfCheetah("HalfCheetah", config_path, nb_input=17, nb_output=6, obs_max_init_value=5, obs_min_init_value=-5, auto_obersvation=True)
-        # environnement:Walker2D = Walker2D("Walker2D", config_path, nb_input=17, nb_output=6, obs_max_init_value=5, obs_min_init_value=-5, auto_obersvation=True)
-        # environnement:Ant = Ant("Ant", config_path, nb_input=27, nb_output=8, obs_max_init_value=5, obs_min_init_value=-5, auto_obersvation=True)
+    # If you want to run QD Gym uncomment the following line and comment the following line (neuro.run_rastrigin)
+    neuro.init_problem_RL(Reinforcement_Manager, config_path, environnement, nb_episode=args.nb_episodes, seeds=seeds, render=False)
+    neuro.run()
 
-        # 2.4 - QD Gym
-        # environnement:QDHalfCheetah = QDHalfCheetah("QDHalfCheetah", config_path, nb_input=26, nb_output=6, obs_max_init_value=5, obs_min_init_value=-5, auto_obersvation=True)
-        # environnement:QDAnt = QDAnt("QDAnt", config_path, nb_input=28, nb_output=8, obs_max_init_value=5, obs_min_init_value=-5, auto_obersvation=True)
-        # environnement:QDHopper = QDHopper("QDHopper", config_path, nb_input=15, nb_output=3, obs_max_init_value=5, obs_min_init_value=-5, auto_obersvation=True)
-        # environnement:QDWalker2D = QDWalker2D("QDWalker", config_path, nb_input=22, nb_output=6, obs_max_init_value=5, obs_min_init_value=-5, auto_obersvation=True)
-        # environnement:QDHumanoid = QDHumanoid("QDHumanoid", config_path, nb_input=44, nb_output=17, obs_max_init_value=5, obs_min_init_value=-5, auto_obersvation=True)
-
-        # 3 - Reinforcement Manager -> Run
-        neuro:Neuro_Evolution = Neuro_Evolution(nb_generations=nb_generation, nb_runs=nb_runs, is_record=True, is_Archive=False, config_path=config_path, cpu=20)
-        neuro.init_algorithm(name, algorithm, config_path)
-        neuro.init_problem_RL(Reinforcement_Manager, config_path, environnement, nb_episode=nb_episode, seeds=seeds, render=False)
-        neuro.run()
+    # If you want to run rasstrigin uncomment the following line and comment the following line (neuro.init_problem_RL & neuro.run)
+    # neuro.run_rastrigin()
 
 def main():
-    neuro_evo_matrix_func(sys.argv[1:])
+    neuro_evo_matrix_func()
 
 if __name__ == "__main__":
     main()

@@ -30,7 +30,7 @@ class Neuro_Evolution:
         self.is_record:bool = is_record
         self.record:Record = None
         self.network_type:str = self.config["Genome_NN"]["network_type"]
-        self.nb_hidden_neurons:int = TOOLS.hiddens_nb_from_config(self.config["Genome_NN"]["hiddens"])
+        self.nb_hidden_neurons:int = TOOLS.hiddens_from_config(self.config["Genome_NN"]["hiddens"])["nb_hiddens"]
         self.optimization_type:str = self.config["NEURO_EVOLUTION"]["optimization_type"] # maximize, minimize, closest_to_zero
         self.is_Archive:bool = is_Archive
         self.archives:List[Archive] = None
@@ -63,14 +63,14 @@ class Neuro_Evolution:
                 self.max_possible_spikes:int = 0
 
             # Rate Decoding / Augmented Decoding
-            if self.decoder == "rate":
+            elif self.decoder == "rate":
                 self.config.update(TOOLS.config_function(self.config_path, ["Rate_Decoder"]))
                 self.decoding_ratio:float = float(self.config["Rate_Decoder"]["ratio_max_output_spike"])
                 self.output_multiplier:int = int(self.config["Genome_NN"]["outputs_multiplicator"])
                 self.max_possible_spikes:int = self.run_length * self.output_multiplier * self.decoding_ratio
                 self.decoder_record_text:str = self.decoder + "_max_spikes-" + str(self.max_possible_spikes)
 
-            if self.decoder == "augmented":
+            elif self.decoder == "augmented":
                 self.config.update(TOOLS.config_function(self.config_path, ["Augmented_Decoder"]))
                 self.max_possible_spikes:int = self.config["Augmented_Decoder"]["spike_max"]
                 self.decoder_record_text:str = self.decoder + "_spike_max-" + str(self.max_possible_spikes)
@@ -94,7 +94,7 @@ class Neuro_Evolution:
         
         if self.network_type == "ANN":
             self.is_bias = TOOLS.is_config_section(self.config_path, "bias_neuron_parameter")
-            self.is_layer_normalization = True if self.config["Genome_NN"]["is_layer_normalization"] == "True" else False
+            # self.is_layer_normalization = True if self.config["Genome_NN"]["is_layer_normalization"] == "True" else False
 
         # 2 - Times parameters
         self.run_nb:int = 0
@@ -141,15 +141,16 @@ class Neuro_Evolution:
             return file_name + "_" + time.strftime("%d-%m-%Y_%H-%M-%S")
 
 
-    def init_algorithm(self, name:str, algorithm_builder:Algorithm, config_path:str) -> None:
+    def init_algorithm(self, name:str, algorithm_builder:Algorithm, config_path:str, extra_info:Dict[Any, Any]=None) -> None:
         self.config_path_algorithm:str = self.__build_config_cache(config_path, os.getcwd() + "/config_cache/")
         self.algorithm_builder:Algorithm = algorithm_builder
         self.algorithm_name_init:str = name
-        # self.algorithm:Algorithm = self.algorithm_builder(self.config_path_algorithm, name)
+        self.algorithm_extra_info:Dict[Any, Any] = extra_info
+        # self.algorithm:Algorithm = self.algorithm_builder(self.config_path_algorithm, name, self.algorithm_extra_info)
         self.algorithm_name:str = self.config["NEURO_EVOLUTION"]["algo_name"]
     
     def re_init_algorithm(self, run_nb:int) -> Algorithm:
-        self.algorithm:Algorithm = self.algorithm_builder(self.config_path_algorithm, self.algorithm_name_init)
+        self.algorithm:Algorithm = self.algorithm_builder(self.config_path_algorithm, self.algorithm_name_init, self.algorithm_extra_info)
 
         if self.problem_type == "RL":
             self.obs_max:np.ndarray = None
@@ -214,6 +215,18 @@ class Neuro_Evolution:
         else:
             self.run_sequential()
 
+    def run_rastrigin(self):
+        self.run_nb:int = 0
+
+        for self.run_nb in range(self.nb_runs):
+            self.algorithm:Algorithm = self.algorithm_builder(self.config_path_algorithm, self.algorithm_name_init, self.algorithm_extra_info, is_rastrigin=True)
+            population:Population = Population(get_new_population_id(), self.config_path)
+            population.population = {}
+            for self.generation in range(self.nb_generations):
+                    
+                # Update Parameters
+                population:Population = self.algorithm.run(population)
+
     def run_sequential(self):
         self.run_nb:int = 0
 
@@ -234,10 +247,10 @@ class Neuro_Evolution:
                 if self.problem_type == "RL":
                     self.prev_obs_max:np.ndarray = self.obs_max
                     self.prev_obs_min:np.ndarray = self.obs_min
-                    population, self.obs_max, self.obs_min = self.problem.run(population, self.run_nb, self.generation, seeds=self.seeds_RL)
+                    population, self.obs_max, self.obs_min = self.problem.run(population, self.generation, seeds=self.seeds_RL)
                     self.__set_population_obs_max_min(population, self.prev_obs_max, self.prev_obs_min)
                 else:
-                    population = self.problem.run(population, self.run_nb, self.generation, seed=None)
+                    population = self.problem.run(population, self.generation, seed=None)
 
                 # Record
                 self.__update_records(population)
@@ -282,9 +295,9 @@ class Neuro_Evolution:
                 if self.generation != 0 and self.problem_type == "RL":
                     self.prev_obs_max:np.ndarray = self.obs_max
                     self.prev_obs_min:np.ndarray = self.obs_min
-                    population_ids = [self.problems_ray[i].run.remote(populations_cpu[i], self.run_nb, self.generation, seeds=self.seeds_RL, indexes=None, obs_max=self.obs_max, obs_min=self.obs_min) for i in range(self.cpu)]
+                    population_ids = [self.problems_ray[i].run.remote(populations_cpu[i], self.generation, seeds=self.seeds_RL, indexes=None, obs_max=self.obs_max, obs_min=self.obs_min) for i in range(self.cpu)]
                 else:
-                    population_ids = [self.problems_ray[i].run.remote(populations_cpu[i], self.run_nb, self.generation, indexes=None) for i in range(self.cpu)]
+                    population_ids = [self.problems_ray[i].run.remote(populations_cpu[i], self.generation, indexes=None) for i in range(self.cpu)]
                 
                 for i in range(self.cpu): populations_cpu[i].population = {} #new (for free memory)
                 population.population = {} # new (for free memory)
@@ -439,12 +452,12 @@ class Neuro_Evolution:
 
         if self.network_type == "ANN":
             is_bias:str = "bias: True" if self.is_bias == True else "bias: False"
-            is_layer_normalization:str = "layer_norm: True" if self.is_layer_normalization == True else "layer_norm: False"
+            # is_layer_normalization:str = "layer_norm: True" if self.is_layer_normalization == True else "layer_norm: False"
             # GENERAL INFO
             print(
             "network_type:", self.network_type,
             is_bias,
-            is_layer_normalization,
+            # is_layer_normalization,
             "optimization_type:", self.optimization_type,
             "env_name:", self.environment_name,
             "record:", self.is_record,

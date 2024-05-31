@@ -14,8 +14,8 @@ import time
 import math
 
 class NSGA(Algorithm):
-    def __init__(self, config_path_file:str, name:str = "NSGA") -> None:
-        Algorithm.__init__(self, config_path_file, name)
+    def __init__(self, config_path_file:str, name:str = "NSGA", extra_info:Dict[Any, Any] = None) -> None:
+        Algorithm.__init__(self, config_path_file, name, extra_info)
         # Initialize configs
         self.config_nsga:Dict[str, Dict[str, Any]] = TOOLS.config_function(config_path_file, ["NSGA", "Genome_NN", "Genome_Classic"])
         self.verbose:bool = True if self.config_nsga["NSGA"]["verbose"] == "True" else False

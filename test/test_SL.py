@@ -5,7 +5,8 @@ sys.path.append('../src/')
 sys.path.append('../src/snn_simulator/')
 sys.path.append('../src/evo_simulator/')
 os.environ["RAY_DEDUP_LOGS"] = "0"
-from typing import List, Tuple, Dict
+from typing import List, Tuple, Dict, Any, Callable
+import argparse
 import random
 
 
@@ -20,12 +21,35 @@ from evo_simulator.ALGORITHMS.NES.NES import NES
 from evo_simulator.ALGORITHMS.NES.OpenES import OpenES
 from evo_simulator.ALGORITHMS.MAP_ELITE.MAP_ELITE import MAP_ELITE
 from evo_simulator.ALGORITHMS.NSLC.NSLC import NSLC
+from evo_simulator.ALGORITHMS.HyperNetwork.HyperNetwork import HyperNetwork
 
 from evo_simulator.ALGORITHMS.EvoSAX.EvoSax_algo import EvoSax_algo
+from torch.utils.data import DataLoader
+from torchvision import datasets, transforms
+import hyper_substrat_config
 
 import numpy as np
 np.set_printoptions(threshold=sys.maxsize)
 
+def get_mnist_data_set(sample_size:int=60_000):
+    batch_size = sample_size
+    data_path='./data_set/mnist'
+
+    # Define a transform
+    transform = transforms.Compose([
+                transforms.Resize((28, 28)),
+                transforms.Grayscale(),
+                transforms.ToTensor(),
+                transforms.Normalize((0,), (1,))])
+
+    mnist_train = datasets.MNIST(data_path, train=True, download=True, transform=transform)
+    # mnist_test = datasets.MNIST(data_path, train=False, download=True, transform=transform)
+
+    # Create DataLoaders
+    train_loader_mnist = DataLoader(mnist_train, batch_size=batch_size, shuffle=True, drop_last=True)
+    # test_loader_mnist = DataLoader(mnist_test, batch_size=batch_size, shuffle=True, drop_last=True)
+    features, labels = next(iter(train_loader_mnist))
+    return "MNIST", features.flatten(1).numpy().astype(np.float64), labels.numpy().astype(np.float64)
 
 
 def min_max_normalize(data):
@@ -96,117 +120,156 @@ def xor_data_set():
 
 
 # Algo Mono-Objective
-def ga_func(config_path) -> Tuple[Neuro_Evolution, str]:
+def ga_func(config_path) -> Tuple[Neuro_Evolution, str, Dict[str, Any]]:
     # 1 - Config path file
     local_dir = os.path.dirname(__file__)
-    neat_config_path = os.path.join(local_dir, start_config_path + config_path)
+    neat_config_path = os.path.join(local_dir, config_path)
+    extra_info:Dict[str, Any] = {}
     
-    return "GA", GA, neat_config_path
+    return "GA", GA, neat_config_path, extra_info
 
-def neat_func(config_path) -> Tuple[Neuro_Evolution, str]:
+def neat_func(config_path) -> Tuple[Neuro_Evolution, str, Dict[str, Any]]:
     # 1 - Config path file
     local_dir = os.path.dirname(__file__)
-    neat_config_path = os.path.join(local_dir, start_config_path + config_path)
+    neat_config_path = os.path.join(local_dir, config_path)
+    extra_info:Dict[str, Any] = {}
     
-    return "NEAT", NEAT, neat_config_path
+    return "NEAT", NEAT, neat_config_path, extra_info
 
-def cma_es_func(config_path) -> Tuple[Neuro_Evolution, str]:
+def hypernetwork_func(config_path, cppn_builder:Callable, cpu:int) -> Tuple[Neuro_Evolution, str, Dict[str, Any]]:
     # 1 - Config path file
     local_dir = os.path.dirname(__file__)
-    neat_config_path = os.path.join(local_dir, start_config_path + config_path)
+    hyperneat_config_path = os.path.join(local_dir, config_path)
+    # cppn_synpases_config_path = os.path.join(local_dir, cppn_config_path)
+    # cppn_neurons_config_path = os.path.join(local_dir, config_path_cppn_neuron)
+
+    extra_info:Dict[str, Any] = {
+        "cppn_builder": cppn_builder,
+        "substrat_function": hyper_substrat_config.generate_multi_layer_circle_points, # circle substrat param
+        # "substrat_function": hyper_substrat_config.generate_vertical_line_points, # vertical substrat param
+        "cpu": cpu,
+        }
+
+    # 2 - Algorithms
+    return "HyperNEAT", HyperNetwork, hyperneat_config_path, extra_info
+
+def cma_es_func(config_path) -> Tuple[Neuro_Evolution, str, Dict[str, Any]]:
+    # 1 - Config path file
+    local_dir = os.path.dirname(__file__)
+    neat_config_path = os.path.join(local_dir, config_path)
+    extra_info:Dict[str, Any] = {}
     
-    return "CMA_ES", CMA_ES, neat_config_path
+    return "CMA_ES", CMA_ES, neat_config_path, extra_info
 
-def nes_func(name, config_path) -> Tuple[Neuro_Evolution, str]:
+def nes_func(config_path) -> Tuple[Neuro_Evolution, str, Dict[str, Any]]:
     # 1 - Config path file
     local_dir = os.path.dirname(__file__)
-    neat_config_path = os.path.join(local_dir, start_config_path + config_path)
+    neat_config_path = os.path.join(local_dir, config_path)
+    extra_info:Dict[str, Any] = {}
     
-    return name, NES, neat_config_path
+    return "NES", NES, neat_config_path, extra_info
 
-def openES_func(name, config_path) -> Tuple[Neuro_Evolution, str]:
+def openES_func(config_path) -> Tuple[Neuro_Evolution, str, Dict[str, Any]]:
     # 1 - Config path file
     local_dir = os.path.dirname(__file__)
-    neat_config_path = os.path.join(local_dir, start_config_path + config_path)
+    neat_config_path = os.path.join(local_dir, config_path)
+    extra_info:Dict[str, Any] = {}
     
     # 2 - Algorithms
-    return name, OpenES, neat_config_path
-
-# def map_elite(config_path) -> Tuple[Neuro_Evolution, str]:
-#     # 1 - Config path file
-#     local_dir = os.path.dirname(__file__)
-#     neat_config_path = os.path.join(local_dir, start_config_path + config_path)
-    
-#     # 2 - Algorithms
-#     map_elite_algorithm:MAP_ELITE = MAP_ELITE(name="MAP-ELITE", config_path_file=neat_config_path)
-
-#     return map_elite_algorithm, neat_config_path
-   
-# def nslc(config_path) -> Tuple[Neuro_Evolution, str]:
-#     # 1 - Config path file
-#     local_dir = os.path.dirname(__file__)
-#     config_path = os.path.join(local_dir, start_config_path + config_path)
-    
-#     # 2 - Algorithms
-#     nslc_algorithm:NSLC = NSLC(name="NSLC", config_path_file=config_path)
-
-#     return nslc_algorithm, config_path
+    return "OpenES", OpenES, neat_config_path, extra_info
 
 
-def evosax_func(name:str, config_path) -> Tuple[Neuro_Evolution, str]:
+
+def evosax_func(name:str, config_path) -> Tuple[Neuro_Evolution, str, Dict[str, Any]]:
     # 1 - Config path file
     local_dir = os.path.dirname(__file__)
-    config_path = os.path.join(local_dir, start_config_path + config_path)
+    config_path = os.path.join(local_dir, config_path)
+    extra_info:Dict[str, Any] = {}
     
-    return name, EvoSax_algo, config_path
+    return name, EvoSax_algo, config_path, extra_info
 
 
-start_config_path = "./config/config_snn/SL/"
-# start_config_path = "./config/config_ann/SL/"
 
-def neuro_evo_func(args:List[str]):
-    if len(args) == 0:raise Exception("Error: No arguments")
+def parse_arg():
+    def to_bool(s) -> bool:
+        if s == "True":
+            return True
+        else:
+            return False
+    parser = argparse.ArgumentParser(description='Process some integers.')
+    parser.add_argument('--cpu', type=int, help='Number of cpu', default=1)
+    parser.add_argument('--nn', type=str, help='Type of neural network', default="SNN")
+    parser.add_argument('--algo', type=str, help='Algorithm name', default="NES-evosax")
+    parser.add_argument('--problem', type=str, help='Problem name')
+    parser.add_argument('--nb_runs', type=int, help='Number of runs', default=3)
+    parser.add_argument('--nb_generations', type=int, help='Number of generations', default=50)
+    parser.add_argument('--record', type=to_bool, help='Record data', default="False")
 
+    return parser.parse_args()
+
+
+def get_algorithm(nn:str, algo:str, cpu:int) -> Tuple[Neuro_Evolution, str, Dict[str, Any]]:
+    # 0 - Config path
+    if nn == "SNN":
+        start_config_path = "./config/config_snn/SL/"
+    elif nn == "ANN":
+        start_config_path = "./config/config_ann/SL/"
+    else:
+        raise Exception("Neural network:" + nn + " not found")
+    
     # 1.0 - Algorithms
-    aglos_dict:Dict[str, Tuple[str, Neuro_Evolution, str]] = {
-        "NEAT":           neat_func("NEAT_CONFIG_SL.cfg"),
-        "GA"  :           ga_func("GA_CONFIG_SL.cfg"),
-        "CMA_ES":         cma_es_func("CMA_ES_CONFIG_SL.cfg"),
-        "NES":            nes_func("NES","NES_CONFIG_SL.cfg"),
-        "OpenES":         openES_func("OpenES", "OpenES_CONFIG_SL.cfg"),
+    if   algo == "NEAT":   return neat_func(start_config_path + "NEAT_CONFIG_SL.cfg")
+    elif algo == "GA":     return ga_func(start_config_path + "GA_CONFIG_SL.cfg")
+    elif algo == "CMA_ES": return cma_es_func(start_config_path + "CMA_ES_CONFIG_SL.cfg")
+    elif algo == "NES":    return nes_func(start_config_path + "NES_CONFIG_SL.cfg")
+    elif algo == "OpenES": return openES_func(start_config_path + "OpenES_CONFIG_SL.cfg")
 
-        # "HyperNEAT":      neat_func("HyperNEAT_CONFIG_SL.cfg"),
-        # "ES-HyperNEAT":   neat_func("ES_HyperNEAT_CONFIG_SL.cfg"), # Coming soon
+    elif algo == "HyperNEAT": return hypernetwork_func(start_config_path + "HyperNEAT_CONFIG_SL.cfg", neat_func( start_config_path + "NEAT_CONFIG_SL.cfg"), cpu)
+    # elif algo == "HyperNEAT": return hypernetwork_func(start_config_path + "HyperNEAT_CONFIG_SL.cfg", neat_func( "./config/config_ann/SL/" + "NEAT_CONFIG_SL.cfg"), cpu)
+    # elif algo == "HyperNEAT": return hypernetwork_func(start_config_path + "HyperNEAT_CONFIG_SL.cfg", evosax_func("NES-evosax",    start_config_path + "NES-evosax_CONFIG_SL.cfg"), cpu)
+    # elif algo == "HyperNEAT": return hypernetwork_func(start_config_path + "HyperNEAT_CONFIG_SL.cfg", evosax_func("NES-evosax",   "./config/config_ann/SL/" + "NES-evosax_CONFIG_SL.cfg"), cpu)
 
-        "DE-evosax":      evosax_func("DE-evosax","DE-evosax_CONFIG_SL.cfg"),
-        "ARS-evosax":     evosax_func("ARS-evosax", "ARS-evosax_CONFIG_SL.cfg"),
-        "NES-evosax":     evosax_func("NES-evosax", "NES-evosax_CONFIG_SL.cfg"),
-        "PEPG-evosax":    evosax_func("PEPG-evosax", "PEPG-evosax_CONFIG_SL.cfg"),
-        "OpenES-evosax":  evosax_func("OpenES-evosax", "OpenES-evosax_CONFIG_SL.cfg"),
+    # if algo == "ES-HyperNEAT": return neat_func("ES_HyperNEAT_CONFIG_SL.cfg") # Coming soon
 
-    }
-    name, algorithm, config_path = aglos_dict[args[0]]
+    elif algo == "DE-evosax":     return evosax_func("DE-evosax",     start_config_path + "DE-evosax_CONFIG_SL.cfg")
+    elif algo == "ARS-evosax":    return evosax_func("ARS-evosax",    start_config_path + "ARS-evosax_CONFIG_SL.cfg")
+    elif algo == "NES-evosax":    return evosax_func("NES-evosax",    start_config_path + "NES-evosax_CONFIG_SL.cfg")
+    elif algo == "PEPG-evosax":   return evosax_func("PEPG-evosax",   start_config_path + "PEPG-evosax_CONFIG_SL.cfg")
+    elif algo == "OpenES-evosax": return evosax_func("OpenES-evosax", start_config_path + "OpenES-evosax_CONFIG_SL.cfg")
 
-    # 2 - Data set
-    problem_name, features, labels = wine_data_set() # input size = 13, output size = 3
-    # problem_name, features, labels = breast_cancer_data_set() # input size = 30, output size = 2
-    # problem_name, features, labels = xor_data_set() # input size = 2, output size = 2
+    else:
+        raise Exception("Algorithm:" + algo + " not found")
+    
+
+def get_data_set(problem:str) -> Tuple[str, np.ndarray, np.ndarray]:
+    if problem == "WINE":            return wine_data_set()           # input size = 13,  output size = 3
+    elif problem == "BREAST_CANCER": return breast_cancer_data_set()  # input size = 30,  output size = 2
+    elif problem == "XOR":           return xor_data_set()            # input size = 2,   output size = 2
+    elif problem == "MNIST":         return get_mnist_data_set()      # input size = 784, output size = 10
+    else:
+        raise Exception("Problem:" + problem + " not found")
+
+def neuro_evo_func():
+    args = parse_arg()
+
+    # 1 - Get Algorithm
+    name, algorithm, config_path, algo_extra_info = get_algorithm(args.nn, args.algo, args.cpu)
+
+    # 2 - Get Data Set
+    problem_name, features, labels = get_data_set(args.problem)
     print("\nLEN DATA SET = ", problem_name, "size", len(features), "LEN input = ", len(features[0]), "labels= ", np.unique(labels), "\n")
 
-    
-    nb_runs:int = 3
-    nb_generation:int = 50
-
-    # 3 - Train
-    neuro_evo:Neuro_Evolution = Neuro_Evolution(nb_generations=nb_generation, nb_runs=nb_runs, is_record=True, config_path=config_path, cpu=20)
-    neuro_evo.init_algorithm(name, algorithm, config_path)
+    # 3 - Run
+    neuro_evo:Neuro_Evolution = Neuro_Evolution(nb_generations=args.nb_generations, nb_runs=args.nb_runs, is_record=args.record, config_path=config_path, cpu=args.cpu)
+    neuro_evo.init_algorithm(name, algorithm, config_path, algo_extra_info)
     neuro_evo.init_problem_SL(Supervised_Manager, config_path, problem_name, features, labels)
     neuro_evo.run()
 
 
 
 def main():
-    neuro_evo_func(sys.argv[1:])
+    parse_arg()
+    neuro_evo_func()
 
 if __name__ == "__main__":
     main()

@@ -10,8 +10,8 @@ import numpy as np
 
 
 class NES(Algorithm): # Natural Evolution Strategies
-    def __init__(self, config_path_file:str, name:str = "NES") -> None:
-        Algorithm.__init__(self, config_path_file, name)
+    def __init__(self, config_path_file:str, name:str = "NES", extra_info:Dict[Any, Any] = None) -> None:
+        Algorithm.__init__(self, config_path_file, name, extra_info)
         # Initialize configs
         self.config_es:Dict[str, Dict[str, Any]] = TOOLS.config_function(config_path_file, ["NES", "Genome_NN"])
         self.verbose:bool = True if self.config_es["NES"]["verbose"] == "True" else False

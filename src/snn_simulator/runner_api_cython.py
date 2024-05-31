@@ -149,6 +149,10 @@ class Runner_Info:
             self.spike_max:int = int(self.config_dict["Augmented_Decoder"]["spike_max"])
             self.spike_distribution_run:int = int(self.config_dict["Augmented_Decoder"]["spike_distribution_run"])
             self.spike_distribution_importance:int = int(self.config_dict["Augmented_Decoder"]["spike_distribution_importance"])
+            self.is_normalize:bool = True if self.config_dict["Augmented_Decoder"]["is_normalize"] == "True" else False
+            self.is_interpolate:bool = True if self.config_dict["Augmented_Decoder"]["is_interpolate"] == "True" else False
+            self.interpolate_max:float = float(self.config_dict["Augmented_Decoder"]["interpolate_max"])
+            self.interpolate_min:float = float(self.config_dict["Augmented_Decoder"]["interpolate_min"])
             # positive, absolute, raw (positive and negative)
             self.spike_type:str = self.config_dict["Augmented_Decoder"]["spike_type"]
             # first_index, by_index, all, nothing 
@@ -156,6 +160,7 @@ class Runner_Info:
             # ascending, descending
             self.linear_spike_importance_type:str = self.config_dict["Augmented_Decoder"]["linear_spike_importance_type"]
             self.output_multiplier:float = float(self.config_dict["Genome_NN"]["outputs_multiplicator"])
+            self.is_voltage_reset:bool = True if self.config_dict["Augmented_Decoder"]["is_voltage_reset"] == "True" else False
 
             if self.spike_type not in ["positive", "absolute", "raw"]: raise Exception("spike_type", self.spike_type, "not supported, please choose between 'positive', 'absolute' and 'raw'")
             if self.importance_type not in ["first_index", "by_index", "all", "nothing"]: raise Exception("importance_type", self.importance_type, "not supported, please choose between 'first_index', 'by_index', 'all' and 'nothing'")
@@ -203,7 +208,7 @@ class Runner(Runner_Info):
         self.cython_init:bool = True
 
         if "augmented" in self.record:
-            self.__runner_cython.init_augmented_spikes_decoder(self.spike_distribution_run, self.spike_distribution_importance, self.importance_type, self.linear_spike_importance_type, self.spike_type)
+            self.__runner_cython.init_augmented_spikes_decoder(self.spike_max, self.spike_distribution_run, self.spike_distribution_importance, self.importance_type, self.linear_spike_importance_type, self.spike_type, self.is_normalize, self.is_interpolate, self.interpolate_max, self.interpolate_min, self.is_voltage_reset)
 
 
     def init_networks(self, genomes:List[Genome_NN]) -> Dict[int, NN]:

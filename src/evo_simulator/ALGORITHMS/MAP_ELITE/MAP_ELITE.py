@@ -7,7 +7,6 @@ from evo_simulator.GENERAL.Reproduction import Reproduction_NN, Reproduction_Cla
 from evo_simulator.ALGORITHMS.NEAT.Mutation import Mutation_NEAT
 from GENERAL.Mutation_NN import Mutation
 from evo_simulator.GENERAL.Archive import Archive
-# from evo_simulator.GENERAL.__Archive_old import Archive
 from typing import Dict, Any, List, Tuple
 import random
 import time
@@ -16,8 +15,8 @@ import numpy as np
 
 
 class MAP_ELITE(Algorithm):
-    def __init__(self, config_path_file:str, name:str = "MAP_ELITE") -> None:
-        Algorithm.__init__(self, config_path_file, name)
+    def __init__(self, config_path_file:str, name:str = "MAP_ELITE", extra_info:Dict[Any, Any] = None, is_rastrigin=False) -> None:
+        Algorithm.__init__(self, config_path_file, name, extra_info)
         # Initialize configs
         self.config_map_elite:Dict[str, Dict[str, Any]] = TOOLS.config_function(config_path_file, ["MAP_ELITE", "Archive", "Genome_NN", "Reproduction", "Mutation"])
         self.verbose:bool = True if self.config_map_elite["MAP_ELITE"]["verbose"] == "True" else False
@@ -33,18 +32,21 @@ class MAP_ELITE(Algorithm):
         self.mutation_ga:Mutation = Mutation(config_path_file, self.attributes_manager)
         self.is_sbx:str = True if self.config_map_elite["Reproduction"]["is_sbx"] == "True" else False
 
-        self.archive:Archive = Archive(
-                                    config_section_name="Archive",
-                                    config_path_file=config_path_file, 
-                                    genome_builder_function=self.__build_genome_function_nn
-                                    )
-
         # test rastrigin
-        # self.__init_rastigin(config_path_file) ## FOR TESTING RASTRIGIN FUNCTION & DEBUGGING
+        self.is_rastrigin:bool = is_rastrigin
+        if is_rastrigin == False:
+            self.archive:Archive = Archive(
+                                        config_section_name="Archive",
+                                        config_path_file=config_path_file, 
+                                        genome_builder_function=self.__build_genome_function_nn
+                                        )
+        else:
+            self.__init_rastigin(config_path_file) ## FOR TESTING RASTRIGIN FUNCTION & DEBUGGING
+
 
     def run(self, global_population:Population) -> Population:
-
-        # return self.run_rastrigin(global_population) ## FOR TESTING RASTRIGIN FUNCTION & DEBUGGING
+        if self.is_rastrigin == True:
+            return self.run_rastrigin(global_population) ## FOR TESTING RASTRIGIN FUNCTION & DEBUGGING
 
         # 0 - Get random genome from the archive
         if self.is_first_generation == True:

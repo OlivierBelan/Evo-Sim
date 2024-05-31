@@ -11,8 +11,8 @@ import numpy as np
 import time
 
 class NEAT(Algorithm):
-    def __init__(self, config_path_file:str, name:str = "NEAT") -> None:
-        Algorithm.__init__(self, config_path_file, name)
+    def __init__(self, config_path_file:str, name:str = "NEAT", extra_info:Dict[Any, Any] = None) -> None:
+        Algorithm.__init__(self, config_path_file, name, extra_info)
 
         # Initialize configs
         self.config_neat:Dict[str, Dict[str, Any]] = TOOLS.config_function(config_path_file, ["NEAT", "Genome_NN", "Specie"])

@@ -3,7 +3,6 @@ sys.setrecursionlimit(100000)
 from snn_simulator.runner_api_cython import Runner as SNN_Runner
 from snn_simulator.runner_api_cython import Runner_Info
 from ann_simulator.runner import ANN_Runner
-from ann_simulator.runner import NN_Custom_torch
 
 from evo_simulator.GENERAL.Population import Population
 from evo_simulator.GENERAL.Genome import Genome_NN
@@ -61,7 +60,7 @@ class Reinforcement_Manager(Runner_Info, Problem):
         else:
             raise Exception("The network type is not recognized", self.network_type, "The network type must be SNN or ANN")
 
-    def run(self, population:Population, run_nb:int, generation:int, seeds:np.ndarray = None, indexes:List[int] = None, obs_max:np.ndarray = None, obs_min:np.ndarray = None) -> Population:  
+    def run(self, population:Population, generation:int, seeds:np.ndarray = None, indexes:List[int] = None, obs_max:np.ndarray = None, obs_min:np.ndarray = None) -> Population:  
         # 0 - Set population received and update the observation_max and observation_min (if needed)
         if indexes is not None:
             genomes_dict:Dict[int, Genome_NN] = population.population
@@ -186,21 +185,20 @@ class Reinforcement_Manager(Runner_Info, Problem):
 
 
     def decoding_spikes(self, actions_dict:Dict[int, np.ndarray], output_indexes_nn:np.ndarray, output_indexes_record:np.ndarray, genomes:Dict[int, Genome_NN]) -> Dict[int, np.ndarray]:
-        if self.decoder == "voltage" and self.disable_output_threshold == True:
-            voltage_min:np.ndarray = np.full(len(output_indexes_nn), self.voltage_min, dtype=np.float32)
-            voltage_max:np.ndarray = np.full(len(output_indexes_nn), self.voltage_max, dtype=np.float32)
+        if self.decoder == "augmented": return actions_dict
 
         for id, actions in actions_dict.items():
-            # actions_dict[id] = np.array([self.snn_decoder.rate(action[output_indexes_record], self.nb_original_outputs) for action in actions], dtype=np.float32)
 
             if self.decoder == "max_spikes": 
                 actions_dict[id] = np.array([self.snn_decoder.max_spikes(action[output_indexes_record], self.nb_original_outputs) for action in actions], dtype=np.float32)
             
             elif self.decoder == "augmented":
-                # if self.output_multiplier > 1:
-                #     actions_dict[id] = np.array([self.snn_decoder.augmented(action[output_indexes_record], self.nb_original_outputs, self.spike_max) for action in actions], dtype=np.float32)
-                # else:
-                actions_dict[id] = np.clip(actions[:, output_indexes_record]/self.spike_max, 0, 1) # does not work if output_multiplicator > 1
+                pass
+                # actions_dict[id] = np.clip(actions[:, output_indexes_record]/self.spike_max, 0, 1) # does not work if output_multiplicator > 1
+                # actions_dict[id] = np.interp(
+                #                                 np.clip(actions[:, output_indexes_record]/self.spike_max, 0, 1),
+                #                                 [0, 1], [self.interpolate_min, self.interpolate_min]
+                #                             ) # does not work if output_multiplicator > 1
 
             elif self.decoder == "rate":
                 actions_dict[id] = np.array([self.snn_decoder.rate(action[output_indexes_record], self.nb_original_outputs, self.ratio_max_output_spike) for action in actions], dtype=np.float32)
@@ -213,8 +211,6 @@ class Reinforcement_Manager(Runner_Info, Problem):
             elif self.decoder == "coeff":
                 actions_dict[id] = np.array([self.snn_decoder.coefficient(action[output_indexes_record], genomes[id].nn.parameters["coeff"][output_indexes_nn], self.nb_original_outputs) for action in actions], dtype=np.float32)
 
-            # actions_dict[id] = np.array([self.snn_decoder.voltage(action[output_indexes], reset, threshold) for action in actions], dtype=np.float32)
-            # actions_dict[id] = np.array([self.snn_decoder.coefficient(action[output_indexes], genomes[id].nn.parameters["coeff"][output_indexes_nn], self.nb_original_outputs) for action in actions], dtype=np.float32)
         return actions_dict
 
     def __reset_genomes_fitness(self, genomes:Dict[int, Genome_NN]) -> None:

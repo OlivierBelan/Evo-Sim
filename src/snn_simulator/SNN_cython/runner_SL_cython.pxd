@@ -131,19 +131,25 @@ cdef class Runner_SL_cython:
     cdef public dict record_augmented
 
     cdef public bint is_augmented_decoder
-    cdef public size_t spikes_max
-    cdef public size_t spike_max_time_step
     cdef public set output_indexes_set
     cdef public size_t output_start
     cdef public size_t output_end
     cdef public size_t input_size
+    cdef public size_t spike_max
+    cdef public size_t spike_max_time_step
+    cdef public size_t spike_distribution_run
     cdef public size_t spike_distribution_importance
     cdef public size_t spike_format_type
     cdef public size_t importance_type
     cdef public bint linear_spike_importance_type
+    cdef public bint is_voltage_reset
 
+    cdef public bint is_normalize
+    cdef public bint is_interpolate
+    cdef public float interpolate_max
+    cdef public float interpolate_min
 
-    cpdef void init_augmented_spikes_decoder(self, size_t spike_max=*, size_t spike_distribution_importance=*, str importance_type=*, str linear_spike_importance_type=*, str spike_type=*)
+    cpdef void init_augmented_spikes_decoder(self, size_t spike_max=*, size_t spike_distribution_run=*, size_t spike_distribution_importance=*, str importance_type=*, str linear_spike_importance_type=*, str spike_type=*, bint is_normalize = *, bint is_interpolate = *, float interpolate_max = *, float interpolate_min = *, bint is_voltage_reset = *)
     cdef void init_augmented_run(self)
     cdef void augmented_update(self, size_t current_time)
     cdef np.ndarray augmented_linear_spike_importance(self, size_t spikes_distribution, size_t run_len, bint is_descending=*)

@@ -17,8 +17,8 @@ import time
 
 
 class NSLC(Algorithm):
-    def __init__(self, config_path_file:str, name:str = "NSLC") -> None:
-        Algorithm.__init__(self, config_path_file, name)
+    def __init__(self, config_path_file:str, name:str = "NSLC", extra_info:Dict[Any, Any] = None, is_rastrigin=False) -> None:
+        Algorithm.__init__(self, config_path_file, name, extra_info)
         # Initialize configs
         self.config_path_file:str = config_path_file
         self.config_NSLC:Dict[str, Dict[str, Any]] = TOOLS.config_function(config_path_file, ["NSLC", "Archive", "Genome_NN", "NEURO_EVOLUTION", "Reproduction", "Mutation"])
@@ -43,13 +43,15 @@ class NSLC(Algorithm):
         self.mutation_ga:Mutation = Mutation(config_path_file, self.attributes_manager)
         self.is_sbx:str = True if self.config_NSLC["Reproduction"]["is_sbx"] == "True" else False
 
-        self.archive:Archive = Archive(
-                                        config_section_name="Archive",
-                                        config_path_file=config_path_file,
-                                        genome_builder_function=self.__build_genome_function_nn
-                                        )
-
-        # self.__init_rastrigin(config_path_file) # If we want to run the Rastrigin function (FOR TESTING RASTRIGIN FUNCTION & DEBUGGING)
+        self.is_rastrigin:bool = is_rastrigin
+        if is_rastrigin == False:
+            self.archive:Archive = Archive(
+                                            config_section_name="Archive",
+                                            config_path_file=config_path_file,
+                                            genome_builder_function=self.__build_genome_function_nn
+                                            )
+        else:
+            self.__init_rastrigin(config_path_file) # If we want to run the Rastrigin function (FOR TESTING RASTRIGIN FUNCTION & DEBUGGING)
 
 
     def first_generation(self, population_manager:Population) -> None:
@@ -68,7 +70,9 @@ class NSLC(Algorithm):
 
 
     def run(self, global_population:Population) -> Population:
-        # return self.run_rastrigin(global_population) ## FOR TESTING RASTRIGIN FUNCTION & DEBUGGING
+        if self.is_rastrigin == True:
+            return self.run_rastrigin(global_population) ## FOR TESTING RASTRIGIN FUNCTION & DEBUGGING
+
 
         # 0 - First generation - Build population
         self.population_manager.population = global_population.population
@@ -78,24 +82,24 @@ class NSLC(Algorithm):
 
 
         # 1 - Update archive
-        start_time = time.time()
+        # start_time = time.time()
         self.__update_archive(self.population_manager, "fitness")
-        print("NSLC: Update archive time:", time.time() - start_time, "s")
+        # print("NSLC: Update archive time:", time.time() - start_time, "s")
 
         # 2 - Novelty and local competition
-        start_time = time.time()
+        # start_time = time.time()
         self.__novelty_and_local_competition(self.population_manager)
-        print("NSLC: Novelty and local competition time:", time.time() - start_time, "s")
+        # print("NSLC: Novelty and local competition time:", time.time() - start_time, "s")
 
         # 3 - Reproduction
-        start_time = time.time()
+        # start_time = time.time()
         self.__reproduction(self.population_manager, self.pop_size, "novelty_competition_score", optimization_type=self.optimization_type)
-        print("NSLC: Reproduction time:", time.time() - start_time, "s")
+        # print("NSLC: Reproduction time:", time.time() - start_time, "s")
 
         # 5 - Mutation
-        start_time = time.time()
+        # start_time = time.time()
         self.__mutation(self.population_manager) # A REVOIR
-        print("NSLC: Mutation time:", time.time() - start_time, "s")
+        # print("NSLC: Mutation time:", time.time() - start_time, "s")
 
 
         # 8 - Update population
@@ -129,11 +133,11 @@ class NSLC(Algorithm):
         # 1 - Mutation (attributes only)
         pop_dict:Dict[int, Genome_NN] = population.population
         # 1.1 - Mutation Neuron (attributes only)
-        population_to_mutate:Dict[int, Genome_NN] = {id:genome for id, genome in pop_dict.items() if genome.info["is_elite"] == False and random.random() < self.mutation.prob_mutate_neuron_params}
-        self.mutation.attributes.neurons_sigma(population_to_mutate, self.attributes_manager.parameters_neuron_names)
+        population_to_mutate:Dict[int, Genome_NN] = {id:genome for id, genome in pop_dict.items() if genome.info["is_elite"] == False and random.random() < self.mutation_ga.prob_mutate_neuron_params}
+        self.mutation_ga.attributes.neurons_sigma(population_to_mutate, self.attributes_manager.parameters_neuron_names)
         # 1.2 - Mutation Synapse (attributes only)
-        population_to_mutate:Dict[int, Genome_NN] = {id:genome for id, genome in pop_dict.items() if genome.info["is_elite"] == False and random.random() < self.mutation.prob_mutate_synapse_params}
-        self.mutation.attributes.synapses_sigma(population_to_mutate, self.attributes_manager.parameters_synapse_names)
+        population_to_mutate:Dict[int, Genome_NN] = {id:genome for id, genome in pop_dict.items() if genome.info["is_elite"] == False and random.random() < self.mutation_ga.prob_mutate_synapse_params}
+        self.mutation_ga.attributes.synapses_sigma(population_to_mutate, self.attributes_manager.parameters_synapse_names)
 
     def __mutation_neat(self, population:Population) -> Population:
         population:Population = self.mutation_neat.mutation_neat(population)

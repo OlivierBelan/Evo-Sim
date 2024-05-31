@@ -14,8 +14,8 @@ import time
 
 
 class GA(Algorithm):
-    def __init__(self, config_path_file:str, name:str = "GA") -> None:
-        Algorithm.__init__(self, config_path_file, name)
+    def __init__(self, config_path_file:str, name:str = "GA", extra_info:Dict[Any, Any] = None) -> None:
+        Algorithm.__init__(self, config_path_file, name, extra_info)
         # Initialize configs
         self.config_ga:Dict[str, Dict[str, Any]] = TOOLS.config_function(config_path_file, ["GA", "Genome_NN", "Reproduction"])
         self.verbose:bool = True if self.config_ga["GA"]["verbose"] == "True" else False

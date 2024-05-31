@@ -1,4 +1,4 @@
-from typing import List, Union, Any, ValuesView, Generator, Dict, Tuple
+from typing import List, Union, Any, ValuesView, Generator, Dict, Tuple, Union
 import numpy as np
 import random
 from configparser import ConfigParser
@@ -87,10 +87,32 @@ def split(seq:list, num: int) -> List[List]:
 
     return out
 
-def hiddens_nb_from_config(hiddens:str) -> int:
-    return sum(list(map(int, hiddens.split("x"))))
-def hiddens_from_config(hiddens:str) -> List[int]:
-    return list(map(int, hiddens.split("x")))
+def hiddens_from_config(hiddens:str) -> Dict[str, Union[Dict[str, int], int]]:
+    hiddens = hiddens.replace(" ", "").split(",")
+    hidden_config:Dict[str, Dict[str, int]] = {}
+    hidden_config["layer_names"] = []
+    nb_hiddens:int = 0
+    nb_hiddens_active:int = 0
+    for h in hiddens:
+        h_params = h.split(":")
+        if len(h_params) == 2:
+            hidden_config[h_params[0]] = {"nb_neurons": int(h_params[1]), "nb_neurons_active": int(h_params[1])}
+            nb_hiddens += int(h_params[1])
+            nb_hiddens_active += int(h_params[1])
+            hidden_config["layer_names"].append(h_params[0])
+        elif len(h_params) == 3:
+            if int(h_params[2]) > int(h_params[1]):
+                raise Exception("hiddens_nb_from_config: nb_neurons_active must be less or equal to nb_neurons -> (" + h_params[0] + ":" + h_params[1] + ":" + h_params[2] + " - layer:nb_neurons:nb_neurons_active)")
+            hidden_config[h_params[0]] = {"nb_neurons": int(h_params[1]), "nb_neurons_active": int(h_params[2])}
+            nb_hiddens += int(h_params[1])
+            nb_hiddens_active += int(h_params[2])
+            hidden_config["layer_names"].append(h_params[0])
+        else:
+            raise Exception("hiddens_nb_from_config: each hidden must contain at least two or three elements, eg: H1:10 (name:nb_neurons) or H1:10:5 (name:nb_neurons:nb_neurons_active)")
+    hidden_config["nb_hiddens"] = nb_hiddens
+    hidden_config["nb_hiddens_active"] = nb_hiddens_active
+    return hidden_config
+
 
 def architecture_from_config(architecture:str, nb_layers:int) -> Tuple[List[List[str]], List[str]]:
     string_list = architecture.split(", ")
