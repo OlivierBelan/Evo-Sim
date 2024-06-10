@@ -91,6 +91,7 @@ cdef class Runner_SL_cython:
     cpdef void burst_encoder(self, np.ndarray inputs_data, float spike_amplitude = *, int max_nb_spikes = *)
     cpdef void rate_encoder(self, np.ndarray inputs_data, float spike_amplitude = *)
     cpdef void raw_encoder(self, np.ndarray inputs_data, float spike_amplitude = *)
+    cpdef void direct_encoder(self, np.ndarray inputs_data, float direct_min = *, float direct_max = *)
     cpdef void combinatorial_encoder(self, np.ndarray inputs_data, int combinatorial_factor=*, size_t combinaison_size=*, size_t combinaison_size_max=*, float combinaison_noise=*, bint combinatorial_roll=*, float spike_amplitude = *)
     cdef void combinatorial_encoder_init(self, int combinatorial_factor=*, size_t combinaison_size=*, size_t combinaison_size_max=*, bint combinatorial_roll=*)
     cdef int find_first_one_index(self, float[:] row)

@@ -261,6 +261,24 @@ cdef class Runner_SL_cython:
         # Add padding (if needed)
         self.add_padding_input_data()
 
+    cpdef void direct_encoder(self, np.ndarray inputs_data, float direct_min = -100_000, float direct_max = 100_000):
+        self.batch_features = min(self.batch_features, <size_t>len(inputs_data))
+        self.batch_running = min(self.batch_running, self.batch_features)
+
+        # inputs_data = np.repeat(inputs_data[:, :, np.newaxis], self.run_time_orginal, axis=2)
+        # inputs_data = np.clip(inputs_data, direct_min, direct_max)
+        # self.input_data = inputs_data[:, np.newaxis]
+        cdef size_t input_data_len = inputs_data[0].shape[0]
+        self.input_data = np.zeros([self.batch_features, 1, input_data_len, <int>self.run_time_margin], dtype=np.float32)
+        cdef size_t i, j, k
+        cdef float[:, :] inputs_data_view = inputs_data
+        cdef float value
+        for i in range(self.batch_features):
+            for j in range(input_data_len):
+                value = inputs_data_view[i, j]
+                for k in range(self.run_time_orginal): # apply padding here by using self.run_time_orginal (without margin in it)
+                    self.input_data[i, 0, j, k] = max(direct_min, min(value, direct_max)) # clip the value between min and max
+
     @cython.boundscheck(False)
     @cython.wraparound(False)
     cpdef void combinatorial_encoder(self, np.ndarray inputs_data, int combinatorial_factor = 1, size_t combinaison_size=1, size_t combinaison_size_max=1, float combinaison_noise=0.0, bint combinatorial_roll=True, float spike_amplitude = 100.0):

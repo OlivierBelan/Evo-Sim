@@ -85,18 +85,19 @@ cdef class Runner_RL_cython:
     cdef list networks_list # list of networks
 
     cpdef void init(self, list networks_list, size_t run_time = *, size_t run_time_margin = *, float dt = *, size_t nb_episode = *, bint online = *, str neuron_reset = *, list record_layer = *, bint disable_output_threshold = *, str decay_method = *, bint is_delay = *, bint is_refractory = *, size_t delay_max = *, set record_decoding_method =*)
-    cpdef void run(self, str encoder_type, np.ndarray inputs_data, size_t spike_rate= *, float spike_amplitude = *, size_t max_nb_spikes = *, int reduce_noise = *, int combinatorial_factor = *, size_t combinaison_size=*, size_t combinaison_size_max=*, float combinatorial_combinaison_noise=*, bint combinatorial_roll =*)
+    cpdef void run(self, str encoder_type, np.ndarray inputs_data, size_t spike_rate= *, float spike_amplitude = *, size_t max_nb_spikes = *, int reduce_noise = *, int combinatorial_factor = *, size_t combinaison_size=*, size_t combinaison_size_max=*, float combinatorial_combinaison_noise=*, bint combinatorial_roll =*, float direct_min = *, float direct_max = *)
     cdef void run_C(self)
 
     # cpdef dict run(self, str type, np.ndarray inputs_data, size_t spike_rate = *, float spike_amplitude = *, size_t max_nb_spikes = *, int reduce_noise = *)
 
     # Init Input data functions
-    cdef int init_data_set(self, str encoder_type, np.ndarray inputs_data, size_t rate, float spike_amplitude, size_t max_nb_spikes, int reduce_noise, int combinatorial_factor, size_t combinaison_size=*, size_t combinaison_size_max=*, float combinatorial_combinaison_noise=*, bint combinatorial_roll = *)
+    cdef int init_data_set(self, str encoder_type, np.ndarray inputs_data, size_t rate, float spike_amplitude, size_t max_nb_spikes, int reduce_noise, int combinatorial_factor, size_t combinaison_size=*, size_t combinaison_size_max=*, float combinatorial_combinaison_noise=*, bint combinatorial_roll = *, float direct_min = *, float direct_max = *)
     cpdef void poisson_encoder(self, np.ndarray inputs_data, size_t rate, float spike_amplitude = *, size_t max_nb_spikes = *)
     cpdef void binomial_encoder(self, np.ndarray inputs_data, float spike_amplitude = *, size_t max_nb_spikes = *, int reduce_noise = *)
     cpdef void exact_encoder(self, np.ndarray inputs_data, float spike_amplitude = *, int max_nb_spikes = *)
     cpdef void rate_encoder(self, np.ndarray inputs_data, float spike_amplitude = *)
     cpdef void raw_encoder(self, np.ndarray inputs_data, float spike_amplitude = *)
+    cpdef void direct_encoder(self, np.ndarray inputs_data, float direct_min = *, float direct_max = *)
     cpdef void combinatorial_encoder(self, np.ndarray inputs_data, int combinatorial_factor = *, size_t combinaison_size=*, size_t combinaison_size_max=*, float combinaison_noise=*, bint combinatorial_roll = *, float spike_amplitude = *)
     cdef void combinatorial_encoder_init(self, int combinatorial_factor=*, size_t combinaison_size=*, size_t combinaison_size_max=*, bint combinatorial_roll = *)
     cdef int find_first_one_index(self, float[:] row)

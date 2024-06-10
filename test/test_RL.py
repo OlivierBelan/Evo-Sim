@@ -12,9 +12,6 @@ from evo_simulator.GENERAL.Neuro_Evolution import Neuro_Evolution
 
 from problem.RL.REINFORCEMENT import Reinforcement_Manager
 
-
-from evo_simulator.ALGORITHMS.Algorithm import Algorithm
-
 # Algorithms Mono-Objective
 from evo_simulator.ALGORITHMS.NEAT.Neat import NEAT
 from evo_simulator.ALGORITHMS.GA.GA import GA
@@ -23,8 +20,8 @@ from evo_simulator.ALGORITHMS.NES.NES import NES
 from evo_simulator.ALGORITHMS.NES.OpenES import OpenES
 from evo_simulator.ALGORITHMS.MAP_ELITE.MAP_ELITE import MAP_ELITE
 from evo_simulator.ALGORITHMS.NSLC.NSLC import NSLC
-# from evo_simulator.ALGORITHMS.HyperNEAT.HyperNEAT import HyperNEAT
-# import hyper_substrat_config
+from evo_simulator.ALGORITHMS.HyperNetwork.HyperNetwork import HyperNetwork
+import hyper_substrat_config
 
 # JAX Algorithms
 from ALGORITHMS.EvoSAX.EvoSax_algo import EvoSax_algo
@@ -59,8 +56,7 @@ from RL_problems_config.QDHopper import QDHopper
 from RL_problems_config.QDWalker2D import QDWalker2D
 from RL_problems_config.QDHumanoid import QDHumanoid
 
-
-from typing import List, Dict, Tuple, Any
+from typing import List, Dict, Tuple, Any, Callable
 np.set_printoptions(threshold=sys.maxsize)
 
 
@@ -81,24 +77,20 @@ def neat_func(config_path) -> Tuple[Neuro_Evolution, str, Dict[str, Any]]:
 
     return "NEAT", NEAT, neat_config_path, extra_info
 
-# def hyperneat_func(config_path, config_path_cppn_neuron, config_path_synapse) -> Tuple[Neuro_Evolution, str, Dict[str, Any]]:
-#     # 1 - Config path file
-#     local_dir = os.path.dirname(__file__)
-#     hyperneat_config_path = os.path.join(local_dir, start_config_path + config_path)
-#     cppn_synpases_config_path = os.path.join(local_dir, start_config_path + config_path_synapse)
-#     cppn_neurons_config_path = os.path.join(local_dir, start_config_path + config_path_cppn_neuron)
+def hypernetwork_func(config_path, cppn_builder:Callable, cpu:int) -> Tuple[Neuro_Evolution, str, Dict[str, Any]]:
+    # 1 - Config path file
+    local_dir = os.path.dirname(__file__)
+    hypernetwork_config_path = os.path.join(local_dir, config_path)
 
-#     # 2 - Algorithms
-#     hyperneat_algorithm:HyperNEAT = HyperNEAT(
-#                                         name="HyperNEAT", 
-#                                         config_path_file=hyperneat_config_path,
-#                                         cppn_synpases_config_path=cppn_synpases_config_path,
-#                                         cppn_neurons_config_path=cppn_neurons_config_path,
-#                                         # substrats=hyper_substrat_config.generate_vertical_line_points(13, 12, 3, 3), 
-#                                         substrats=hyper_substrat_config.generate_multi_layer_circle_points(2, 21, 3, 1),
-#                                         substrats_connection=[(0, 1), (1, 2), (1, 1)] # (input, hidden), (hidden, output), (hidden, hidden)
-#                                         )
-#     return hyperneat_algorithm, hyperneat_config_path
+    extra_info:Dict[str, Any] = {
+        "cppn_builder": cppn_builder,
+        "substrat_function": hyper_substrat_config.generate_multi_layer_circle_points, # circle substrat param
+        # "substrat_function": hyper_substrat_config.generate_vertical_line_points, # vertical substrat param
+        "cpu": cpu,
+        }
+
+    # 2 - Algorithms
+    return "HyperNetwork", HyperNetwork, hypernetwork_config_path, extra_info
 
 def cma_es_func(config_path) -> Tuple[Neuro_Evolution, str, Dict[str, Any]]:
     # 1 - Config path file
@@ -176,9 +168,9 @@ def parse_arg():
 
 def get_algorithm(nn:str, algo:str) -> Tuple[Neuro_Evolution, str, Dict[str, Any]]:
     # 0 - Config path
-    if nn == "SNN":
+    if nn.upper() == "SNN":
         start_config_path = "./config/config_snn/RL/"
-    elif nn == "ANN":
+    elif nn.upper() == "ANN":
         start_config_path = "./config/config_ann/RL/"
     else:
         raise Exception("Neural network:" + nn + " not found")

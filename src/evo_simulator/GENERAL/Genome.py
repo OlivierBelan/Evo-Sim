@@ -1,5 +1,4 @@
 from typing import Dict, Any, List
-from evo_simulator.GENERAL.SNN import SNN
 from evo_simulator.GENERAL.NN import NN
 from evo_simulator.GENERAL.Fitness import Fitness
 from evo_simulator.GENERAL.Attribute import Attribute_Paramaters

@@ -18,20 +18,20 @@ import time
 
 
 class HyperNetwork(Algorithm):
-    def __init__(self, config_path_file:str, name:str = "HyperNEAT", extra_info:Dict[str, Any] = None) -> None:
+    def __init__(self, config_path_file:str, name:str = "HyperNetwork", extra_info:Dict[str, Any] = None) -> None:
         Algorithm.__init__(self, config_path_file, name, extra_info)
         
 
-        # 1 - Initialize HyperNEAT configs
-        self.config_hyperneat:Dict[str, Dict[str, Any]] = TOOLS.config_function(config_path_file, ["HyperNEAT", "Genome_NN"])
-        self.verbose:bool = True if self.config_hyperneat["HyperNEAT"]["verbose"] == "True" else False
-        self.pop_size:int = int(self.config_hyperneat["HyperNEAT"]["pop_size"])
+        # 1 - Initialize HyperNetwork configs
+        self.config_hypernetwork:Dict[str, Dict[str, Any]] = TOOLS.config_function(config_path_file, ["HyperNetwork", "Genome_NN"])
+        self.verbose:bool = True if self.config_hypernetwork["HyperNetwork"]["verbose"] == "True" else False
+        self.pop_size:int = int(self.config_hypernetwork["HyperNetwork"]["pop_size"])
         self.is_first_generation:bool = True
         self.cpu:int = extra_info["cpu"]
 
-        self.inputs:int = int(self.config_hyperneat["Genome_NN"]["inputs"])
-        self.outputs:int = int(self.config_hyperneat["Genome_NN"]["outputs"])
-        self.hiddens_config:Dict[str, Union[Dict[str, List[int]], int]] = TOOLS.hiddens_from_config(self.config_hyperneat["Genome_NN"]["hiddens"])
+        self.inputs:int = int(self.config_hypernetwork["Genome_NN"]["inputs"])
+        self.outputs:int = int(self.config_hypernetwork["Genome_NN"]["outputs"])
+        self.hiddens_config:Dict[str, Union[Dict[str, List[int]], int]] = TOOLS.hiddens_from_config(self.config_hypernetwork["Genome_NN"]["hiddens"])
 
 
         # 2- Get substrat configuration
@@ -39,8 +39,8 @@ class HyperNetwork(Algorithm):
         substrat_function:Callable = self.extra_info["substrat_function"]
         inputs_coordinates, outputs_coordinates, hiddens_coordinates_list = substrat_function(self.inputs, self.outputs, [self.hiddens_config[hidden]["nb_neurons"] for hidden in hidden_names]) 
         architecture_coordinates:Dict[str, np.ndarray] = {"I": inputs_coordinates, "O": outputs_coordinates}
-        genome_core:Genome_NN = Genome_NN(0, self.config_hyperneat["Genome_NN"], self.attributes_manager)
-        self.substrat_network_type:str = self.config_hyperneat["Genome_NN"]["network_type"]
+        genome_core:Genome_NN = Genome_NN(0, self.config_hypernetwork["Genome_NN"], self.attributes_manager)
+        self.substrat_network_type:str = self.config_hypernetwork["Genome_NN"]["network_type"]
         for i in range(len(hiddens_coordinates_list)): architecture_coordinates[hidden_names[i]] = hiddens_coordinates_list[i]
 
         self.cppn_data_set, self.substrat_synapses_actives_indexes = self.__get_substrat_connection_and_build_cppn_data_set(genome_core.architecture, architecture_coordinates, genome_core.nn.architecture_neurons)
@@ -84,8 +84,8 @@ class HyperNetwork(Algorithm):
 
 
         # 4 - Check if all population have the same size
-        if self.cppn_algorithm.pop_size != self.pop_size: raise Exception("HyperNEAT: pop_size (" + str(self.pop_size) + ") must be equal to CPPN_algo pop_size (" + str(self.cppn_algorithm.pop_size) +")")
-        if self.cppn_inputs != self.cppn_data_set.shape[1]: raise Exception("HyperNEAT: CPPN inputs (" + str(self.cppn_inputs) + ") must be equal to CPPN data set size (" + str(self.cppn_data_set.shape[1]) +")")
+        if self.cppn_algorithm.pop_size != self.pop_size: raise Exception("HyperNetwork: pop_size (" + str(self.pop_size) + ") must be equal to CPPN_algo pop_size (" + str(self.cppn_algorithm.pop_size) +")")
+        if self.cppn_inputs != self.cppn_data_set.shape[1]: raise Exception("HyperNetwork: CPPN inputs (" + str(self.cppn_inputs) + ") must be equal to CPPN data set size (" + str(self.cppn_data_set.shape[1]) +")")
         
         # Utils variables
         self.cppn_record:Dict[int, np.ndarray] = {}
@@ -207,18 +207,18 @@ class HyperNetwork(Algorithm):
         self.is_first_generation = False
         population:Dict[int, Genome_NN] = population_manager.population
         while len(population) < self.pop_size:
-            new_genome:Genome_NN = Genome_NN(get_new_genome_id(), self.config_hyperneat["Genome_NN"], self.attributes_manager)
+            new_genome:Genome_NN = Genome_NN(get_new_genome_id(), self.config_hypernetwork["Genome_NN"], self.attributes_manager)
             new_genome.nn.set_arbitrary_parameters(is_random=True)
             population[new_genome.id] = new_genome
         self.__run_cppn()
         self.__build_substrat_population(population_manager)
 
     def __build_substrat_population(self, population_manager:Population_NN) -> None:
-        hyperneat_population:List[Genome_NN] = list(population_manager.population.values())
+        hypernetwork_population:List[Genome_NN] = list(population_manager.population.values())
         substrat_population:Dict[int, Genome_NN] = {}
 
         for index, (cppn_id, cppn_output) in enumerate(self.cppn_record.items()):
-            substrat_genome:Genome_NN = hyperneat_population[index]
+            substrat_genome:Genome_NN = hypernetwork_population[index]
             if self.cpu > 1:
                 substrat_genome.nn.parameters["weight"] = substrat_genome.nn.parameters["weight"].copy()
             # print("cppn_output", cppn_output, cppn_output.shape)

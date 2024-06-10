@@ -65,9 +65,9 @@ cdef class Runner_RL_cython:
     #  PUBLIC METHODS
     @cython.boundscheck(False)
     @cython.wraparound(False)
-    cpdef void run(self, str encoder_type, np.ndarray inputs_data, size_t spike_rate = 2, float spike_amplitude = 100.0, size_t max_nb_spikes = 3, int reduce_noise = 100, int combinatorial_factor = 1, size_t combinaison_size=1, size_t combinaison_size_max=1, float combinatorial_combinaison_noise=0.0, bint combinatorial_roll = True):
+    cpdef void run(self, str encoder_type, np.ndarray inputs_data, size_t spike_rate = 2, float spike_amplitude = 100.0, size_t max_nb_spikes = 3, int reduce_noise = 100, int combinatorial_factor = 1, size_t combinaison_size=1, size_t combinaison_size_max=1, float combinatorial_combinaison_noise=0.0, bint combinatorial_roll = True, float direct_min = -100_000, float direct_max = 100_000):
         # 0 - Init inputs data and networks
-        if self.init_data_set(encoder_type, inputs_data, spike_rate, spike_amplitude, max_nb_spikes, reduce_noise, combinatorial_factor, combinaison_size, combinaison_size_max, combinatorial_combinaison_noise, combinatorial_roll) == -1: return
+        if self.init_data_set(encoder_type, inputs_data, spike_rate, spike_amplitude, max_nb_spikes, reduce_noise, combinatorial_factor, combinaison_size, combinaison_size_max, combinatorial_combinaison_noise, combinatorial_roll, direct_min, direct_max) == -1: return
         self.run_C()
 
     @cython.boundscheck(False)
@@ -109,7 +109,7 @@ cdef class Runner_RL_cython:
     @cython.boundscheck(False)
     @cython.wraparound(False)
     @cython.initializedcheck(False)
-    cdef int init_data_set(self, str encoder_type, np.ndarray inputs_data, size_t rate, float spike_amplitude, size_t max_nb_spikes, int reduce_noise, int combinatorial_factor, size_t combinaison_size=1, size_t combinaison_size_max=1, float combinatorial_combinaison_noise=0.0, bint combinatorial_roll = True):
+    cdef int init_data_set(self, str encoder_type, np.ndarray inputs_data, size_t rate, float spike_amplitude, size_t max_nb_spikes, int reduce_noise, int combinatorial_factor, size_t combinaison_size=1, size_t combinaison_size_max=1, float combinatorial_combinaison_noise=0.0, bint combinatorial_roll = True, float direct_min = -100_000, float direct_max = 100_000):
         if encoder_type == "poisson":
             self.poisson_encoder(inputs_data, rate, spike_amplitude, max_nb_spikes)
         elif encoder_type == "binomial":
@@ -122,6 +122,8 @@ cdef class Runner_RL_cython:
             self.combinatorial_encoder(inputs_data, combinatorial_factor, combinaison_size, combinaison_size_max, combinatorial_combinaison_noise, combinatorial_roll, spike_amplitude)
         elif encoder_type == "latency":
             self.raw_encoder(inputs_data, spike_amplitude)
+        elif encoder_type == "direct":
+            self.direct_encoder(inputs_data, direct_min, direct_max)
         else:
             print("Error: encoder_type not found")
             return -1
@@ -230,6 +232,28 @@ cdef class Runner_RL_cython:
 
     @cython.boundscheck(False)
     @cython.wraparound(False)
+    cpdef void direct_encoder(self, np.ndarray inputs_data, float direct_min = -100_000, float direct_max = 100_000):
+        # inputs_data = np.repeat(inputs_data[:, :, :, np.newaxis], self.run_time_original, axis=3)
+        # inputs_data = np.clip(inputs_data, direct_min, direct_max)
+        # self.input_data = inputs_data.astype(np.float32)
+        # print("inputs_data", inputs_data, "shape", np.shape(inputs_data))
+        self.input_data = np.zeros([inputs_data.shape[0], inputs_data.shape[1], inputs_data.shape[2], <int>self.run_time_margin], dtype=np.float32) # add padding by using run_time_margin
+        cdef int i, j, k
+        cdef size_t m
+        cdef double[:, :, :] inputs_data_view = inputs_data
+        cdef double value
+        for i in range(inputs_data.shape[0]):
+            for j in range(inputs_data.shape[1]):
+                for k in range(inputs_data.shape[2]):
+                    value = inputs_data_view[i, j, k]
+                    for m in range(self.run_time_original): # add padding by using run_time_original
+                        self.input_data[i, j, k, m] = max(direct_min, min(value, direct_max)) # clip the value between min and max
+        # print("direct_encoder\n", np.array(self.input_data), "shape", np.shape(self.input_data))
+        # exit()
+
+        
+    @cython.boundscheck(False)
+    @cython.wraparound(False)
     @cython.cdivision(True)
     @cython.initializedcheck(False)
     cpdef void combinatorial_encoder(self, np.ndarray inputs_data, int combinatorial_factor = 1, size_t combinaison_size=1, size_t combinaison_size_max=1, float combinaison_noise=0.0, bint combinatorial_roll=True, float spike_amplitude = 100.0):
@@ -241,6 +265,7 @@ cdef class Runner_RL_cython:
         inputs_data = np.rint(np.interp(inputs_data, [0, 1], [0, encoder_size])).astype(np.int32)
         cdef int[:, :, :] inputs_data_view = inputs_data
         cdef int i, j, k
+        cdef size_t m
         cdef int index
 
         for i in range(inputs_data.shape[0]):

@@ -30,8 +30,8 @@ class Runner_Info:
 
 
             if self.decay_method not in ["lif", "beta"]: raise Exception("decay_method", self.decay_method, "not supported, please choose between 'lif' and 'beta'")
-            if self.encoder not in ["poisson", "binomial", "exact", "rate", "combinatorial", "latency", "burst"]: raise Exception("encoding_method", self.encoder, "not supported, please choose between 'poisson', 'binomial', 'exact', 'rate', 'combinatorial', 'latency' and 'burst'")
-            if self.decoder not in ["spike", "voltage", "augmented", "rate","max_spike", "coeff"]: raise Exception("decoding_method", self.decoding_method, "not supported, please choose between 'spike', 'voltage', 'augmented', 'rate' and 'max_spike'")
+            if self.encoder not in ["poisson", "binomial", "exact", "rate", "combinatorial", "latency", "direct","burst"]: raise Exception("encoding_method", self.encoder, "not supported, please choose between 'poisson', 'binomial', 'exact', 'rate', 'combinatorial', 'latency' and 'direct'")
+            if self.decoder not in ["spike", "voltage", "augmented", "rate","max_spike", "coeff"]: raise Exception("decoding_method", self.decoder, "not supported, please choose between 'spike', 'voltage', 'augmented', 'rate' and 'max_spike'")
             for record_type in self.record:
                 if record_type not in ["spike", "voltage", "augmented"]: raise Exception("record_decoding_method", record_type, "not supported, please choose between 'spike', 'voltage' or 'augmented'")            
             self.record_type:str = list(self.record)[0]
@@ -80,6 +80,10 @@ class Runner_Info:
         self.combinatorial_is_first_decay:bool = False
         self.combinatorial_roll:bool = False
         
+        # for direct init
+        self.direct_max:float = 0
+        self.direct_min:float = 0
+
         if self.encoder == "poisson":
             self.config_dict.update(TOOLS.config_function(config_path, ["Poisson_Encoder"]))
             self.spike_rate:int = int(self.config_dict["Poisson_Encoder"]["spike_rate"])
@@ -115,8 +119,14 @@ class Runner_Info:
         elif self.encoder == "latency":
             self.config_dict.update(TOOLS.config_function(config_path, ["Latency_Encoder"]))
             self.spike_amplitude = int(self.config_dict["Latency_Encoder"]["spike_amplitude"])
+
+        elif self.encoder == "direct":
+            self.config_dict.update(TOOLS.config_function(config_path, ["Direct_Encoder"]))
+            self.spike_amplitude = 100
+            self.direct_max = float(self.config_dict["Direct_Encoder"]["direct_max"])
+            self.direct_min = float(self.config_dict["Direct_Encoder"]["direct_min"])
         else:
-            raise Exception("Encoder", self.encoder, "not supported, please choose between 'poisson', 'binomial', 'exact', 'rate', 'combinatorial' and 'latency'")
+            raise Exception("Encoder", self.encoder, "not supported, please choose between 'poisson', 'binomial', 'exact', 'rate', 'combinatorial', 'latency' and 'direct'")
 
     def init_decoder(self, config_path:str) -> None:
         # DECODERS: rate, voltage, augmented, max_spike, coeff
@@ -241,7 +251,7 @@ class Runner(Runner_Info):
         # 1 - Run networks Reinforcement
         elif (self.runner_type == "Reinforcement" and self.snn_list_len == len(features[0])): # Check if nb of snns == nb of features
             features = self.check_encoder(features)
-            self.__runner_cython.run(self.encoder, features, self.spike_rate, self.spike_amplitude, self.max_nb_spikes, self.reduce_noise, self.combinatorial_factor, self.combinatorial_combinaison_size, self.combinatorial_combinaison_size_max, self.combinatorial_combinaison_noise, self.combinatorial_roll)
+            self.__runner_cython.run(self.encoder, features, self.spike_rate, self.spike_amplitude, self.max_nb_spikes, self.reduce_noise, self.combinatorial_factor, self.combinatorial_combinaison_size, self.combinatorial_combinaison_size_max, self.combinatorial_combinaison_noise, self.combinatorial_roll, self.direct_min, self.direct_max)
 
         else:
             print("runner type", self.runner_type)
@@ -317,10 +327,12 @@ class Runner(Runner_Info):
             self.combinatorial_encoder(features)
         elif self.encoder == "latency":
             self.latency_encoder(features)
+        elif self.encoder == "direct":
+            self.direct_encoder(features)
         # elif self.encoder == "burst":
         #     self.burst_encoder(features)
         else:
-            raise Exception("Encoder", self.encoder, "not supported, please choose between 'poisson', 'binomial', 'exact', 'rate', 'combinatorial' and 'latency'")
+            raise Exception("Encoder", self.encoder, "not supported yet, please choose between 'poisson', 'binomial', 'exact', 'rate', 'combinatorial', 'latency', and 'direct'")
 
     def poisson_encoder(self, features:np.ndarray | List[np.ndarray]) -> None:
         if self.runner_type == "Supervised":
@@ -367,6 +379,14 @@ class Runner(Runner_Info):
     def combinatorial_encoder(self, features:np.ndarray) -> None:
         if self.runner_type == "Supervised":
             self.__runner_cython.combinatorial_encoder(features, self.combinatorial_factor, self.combinatorial_combinaison_size, self.combinatorial_combinaison_size_max, self.combinatorial_combinaison_noise, self.combinatorial_roll, self.spike_amplitude)
+        
+        elif self.runner_type == "Reinforcement":
+            print("FROM runner_api.cython.py: HAS TO CHECK THIS FUNCTION FOR RL FEATURES")
+            exit()
+
+    def direct_encoder(self, features:np.ndarray) -> None:
+        if self.runner_type == "Supervised":
+            self.__runner_cython.direct_encoder(features, self.direct_min, self.direct_max)
         
         elif self.runner_type == "Reinforcement":
             print("FROM runner_api.cython.py: HAS TO CHECK THIS FUNCTION FOR RL FEATURES")

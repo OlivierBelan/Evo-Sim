@@ -22,6 +22,7 @@ from evo_simulator.ALGORITHMS.NES.OpenES import OpenES
 from evo_simulator.ALGORITHMS.MAP_ELITE.MAP_ELITE import MAP_ELITE
 from evo_simulator.ALGORITHMS.NSLC.NSLC import NSLC
 from evo_simulator.ALGORITHMS.HyperNetwork.HyperNetwork import HyperNetwork
+from evo_simulator.ALGORITHMS.ES_HyperNetwork.ES_HyperNetwork import ES_HyperNetwork
 
 from evo_simulator.ALGORITHMS.EvoSAX.EvoSax_algo import EvoSax_algo
 from torch.utils.data import DataLoader
@@ -139,9 +140,7 @@ def neat_func(config_path) -> Tuple[Neuro_Evolution, str, Dict[str, Any]]:
 def hypernetwork_func(config_path, cppn_builder:Callable, cpu:int) -> Tuple[Neuro_Evolution, str, Dict[str, Any]]:
     # 1 - Config path file
     local_dir = os.path.dirname(__file__)
-    hyperneat_config_path = os.path.join(local_dir, config_path)
-    # cppn_synpases_config_path = os.path.join(local_dir, cppn_config_path)
-    # cppn_neurons_config_path = os.path.join(local_dir, config_path_cppn_neuron)
+    hypernetwork_config_path = os.path.join(local_dir, config_path)
 
     extra_info:Dict[str, Any] = {
         "cppn_builder": cppn_builder,
@@ -151,7 +150,21 @@ def hypernetwork_func(config_path, cppn_builder:Callable, cpu:int) -> Tuple[Neur
         }
 
     # 2 - Algorithms
-    return "HyperNEAT", HyperNetwork, hyperneat_config_path, extra_info
+    return "HyperNetwork", HyperNetwork, hypernetwork_config_path, extra_info
+
+def es_hypernetwork_func(config_path, cppn_builder:Callable, cpu:int) -> Tuple[Neuro_Evolution, str, Dict[str, Any]]:
+    # 1 - Config path file
+    local_dir = os.path.dirname(__file__)
+    es_hypernetwork_config_path = os.path.join(local_dir, config_path)
+    extra_info:Dict[str, Any] = {
+        "cppn_builder": cppn_builder,
+        "substrat_function": hyper_substrat_config.generate_multi_layer_circle_points, # circle substrat param
+        # "substrat_function": hyper_substrat_config.generate_vertical_line_points, # vertical substrat param
+        "cpu": cpu,
+        }
+
+    # 2 - Algorithms
+    return "ES_HyperNetwork", ES_HyperNetwork, es_hypernetwork_config_path, extra_info
 
 def cma_es_func(config_path) -> Tuple[Neuro_Evolution, str, Dict[str, Any]]:
     # 1 - Config path file
@@ -210,9 +223,9 @@ def parse_arg():
 
 def get_algorithm(nn:str, algo:str, cpu:int) -> Tuple[Neuro_Evolution, str, Dict[str, Any]]:
     # 0 - Config path
-    if nn == "SNN":
+    if nn.upper() == "SNN":
         start_config_path = "./config/config_snn/SL/"
-    elif nn == "ANN":
+    elif nn.upper() == "ANN":
         start_config_path = "./config/config_ann/SL/"
     else:
         raise Exception("Neural network:" + nn + " not found")
@@ -224,12 +237,12 @@ def get_algorithm(nn:str, algo:str, cpu:int) -> Tuple[Neuro_Evolution, str, Dict
     elif algo == "NES":    return nes_func(start_config_path + "NES_CONFIG_SL.cfg")
     elif algo == "OpenES": return openES_func(start_config_path + "OpenES_CONFIG_SL.cfg")
 
-    elif algo == "HyperNEAT": return hypernetwork_func(start_config_path + "HyperNEAT_CONFIG_SL.cfg", neat_func( start_config_path + "NEAT_CONFIG_SL.cfg"), cpu)
-    # elif algo == "HyperNEAT": return hypernetwork_func(start_config_path + "HyperNEAT_CONFIG_SL.cfg", neat_func( "./config/config_ann/SL/" + "NEAT_CONFIG_SL.cfg"), cpu)
-    # elif algo == "HyperNEAT": return hypernetwork_func(start_config_path + "HyperNEAT_CONFIG_SL.cfg", evosax_func("NES-evosax",    start_config_path + "NES-evosax_CONFIG_SL.cfg"), cpu)
-    # elif algo == "HyperNEAT": return hypernetwork_func(start_config_path + "HyperNEAT_CONFIG_SL.cfg", evosax_func("NES-evosax",   "./config/config_ann/SL/" + "NES-evosax_CONFIG_SL.cfg"), cpu)
+    elif algo == "HyperNetwork": return hypernetwork_func(start_config_path + "HyperNetwork_CONFIG_SL.cfg", neat_func( start_config_path + "NEAT_CONFIG_SL.cfg"), cpu)
+    # elif algo == "HyperNetwork": return hypernetwork_func(start_config_path + "HyperNetwork_CONFIG_SL.cfg", neat_func( "./config/config_ann/SL/" + "NEAT_CONFIG_SL.cfg"), cpu)
+    # elif algo == "HyperNetwork": return hypernetwork_func(start_config_path + "HyperNetwork_CONFIG_SL.cfg", evosax_func("NES-evosax",    start_config_path + "NES-evosax_CONFIG_SL.cfg"), cpu)
+    # elif algo == "HyperNetwork": return hypernetwork_func(start_config_path + "HyperNetwork_CONFIG_SL.cfg", evosax_func("NES-evosax",   "./config/config_ann/SL/" + "NES-evosax_CONFIG_SL.cfg"), cpu)
 
-    # if algo == "ES-HyperNEAT": return neat_func("ES_HyperNEAT_CONFIG_SL.cfg") # Coming soon
+    # if algo == "ES_HyperNetwork": return es_hypernetwork_func(start_config_path + "ES_HyperNetwork_CONFIG_SL.cfg", neat_func( start_config_path + "NEAT_CONFIG_SL.cfg"), cpu) # Coming soon
 
     elif algo == "DE-evosax":     return evosax_func("DE-evosax",     start_config_path + "DE-evosax_CONFIG_SL.cfg")
     elif algo == "ARS-evosax":    return evosax_func("ARS-evosax",    start_config_path + "ARS-evosax_CONFIG_SL.cfg")
