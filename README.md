@@ -1,4 +1,4 @@
-# Evo-Sim
+# Evo-Sim - (16/05/25) New Version is coming up (GPU compatible, new encoders/decoders, new methods)!
 **Evo-Sim** is a comprehensive neuroevolutionary simulator designed to support both Spiking Neural Networks (SNNs) and Artificial Neural Networks (ANNs). It integrates a variety of sophisticated algorithms tailored for evolutionary simulation and neural network experimentation.
 
 ## Supported Algorithms
